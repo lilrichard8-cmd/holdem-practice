@@ -20,6 +20,7 @@ button { font-family: inherit; cursor: pointer; }
 #topbar .info:first-child { flex: 1; min-width: 0; overflow: hidden; font-size: 12px; }
 #topbar .info:first-child span { overflow: hidden; text-overflow: ellipsis; }
 #topbar button { background: #1d3328; color: #dfe; border: 1px solid #2d4d3c; border-radius: 6px; padding: 3px 7px; font-size: 12px; white-space: nowrap; }
+@media (max-width: 420px) { #topbar button { padding: 3px 5px; font-size: 11px; } #topbar .info { gap: 5px; } }
 
 /* 牌桌 */
 #table-wrap { flex: 1; position: relative; min-height: 0; }
@@ -82,7 +83,7 @@ button { font-family: inherit; cursor: pointer; }
 #next-row button { flex: 1; padding: 12px; font-size: 15px; border: none; border-radius: 10px; background: #2b6a8a; color: #fff; font-weight: 600; }
 
 /* 弹层 */
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 12px; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.84); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 12px; }
 .panel { background: #122018; border: 1px solid #2d4d3c; border-radius: 14px; width: 100%; max-width: 440px; max-height: 92vh; overflow: auto; padding: 16px; }
 .panel h2 { margin: 0 0 12px; font-size: 18px; color: #fff; }
 .panel label { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; font-size: 14px; color: #dfe; }
@@ -108,13 +109,31 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
   #pot { font-size: 15px; } #msg { font-size: 15px; }
 }
 
+/* 风格设置 */
+.seat.clickable { cursor: pointer; }
+.row2 { display: flex; gap: 8px; } .row2 .secondary { margin-top: 4px; }
+#style-list { margin: 8px 0; max-height: 50vh; overflow-y: auto; border-top: 1px solid #2d4d3c; border-bottom: 1px solid #2d4d3c; padding: 2px 0; scrollbar-width: thin; }
+#style-list::-webkit-scrollbar { width: 6px; } #style-list::-webkit-scrollbar-thumb { background: #2d4d3c; border-radius: 3px; }
+#style-hint { font-size: 11px; color: #789; text-align: right; margin-top: -4px; }
+.style-row { border: 1px solid #2d4d3c; border-radius: 10px; padding: 6px 8px; margin: 6px 0; background: #0e1a14; }
+.style-row.sel { border-color: #ffd54a; }
+.style-row .hd { display: flex; align-items: center; gap: 8px; }
+.style-row .nm { flex: 1; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.style-row select { width: 96px; padding: 5px; font-size: 13px; border-radius: 6px; border: 1px solid #456; background: #061009; color: #fff; }
+.style-row .adv { padding: 5px 8px; font-size: 12px; background: #1d3328; color: #dfe; border: 1px solid #2d4d3c; border-radius: 6px; }
+.style-row .advbox { margin-top: 4px; }
+.style-row label.sl { display: flex; align-items: center; gap: 6px; margin: 2px 0; font-size: 12px; }
+.style-row label.sl span { width: 92px; flex: none; color: #9fc; }
+.style-row label.sl input[type=range] { flex: 1; min-width: 0; }
+.style-row label.sl b { width: 34px; text-align: right; color: #ffe08a; font-weight: 500; }
+
 </style>
 </head>
 <body>
 <div id="app">
   <div id="topbar">
     <div class="info"><span id="tb-level">—</span><span id="tb-hand"></span></div>
-    <div class="info"><button id="tb-log">记录</button><button id="tb-levels">盲注表</button><button id="tb-menu">菜单</button></div>
+    <div class="info"><button id="tb-log">记录</button><button id="tb-levels">盲注</button><button id="tb-styles">风格</button><button id="tb-menu">菜单</button></div>
   </div>
   <div id="table-wrap">
     <div id="table">
@@ -169,9 +188,10 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     </div>
     <label>AI 速度 <select id="s-speed"><option value="1">正常（0.5–1.5 秒）</option><option value="2">快（2 倍）</option><option value="4">很快（4 倍）</option><option value="10">极速（自动连打）</option></select></label>
     <label>练习辅助（显示胜率 / 底池赔率） <input type="checkbox" id="s-helper"></label>
+    <button class="secondary" id="s-styles">AI 玩家风格设置…</button>
     <button class="primary" id="s-start">开始新牌局</button>
     <button class="secondary" id="s-cancel">返回</button>
-    <div class="small">规则：无限注德州扑克，TDA 锦标赛规则（大盲前注、dead button、最小加注、不完整加注不重开加注权、边池、按钮左侧零头）。设置自动保存在本机。</div>
+    <div class="small">规则：无限注德州扑克，TDA 锦标赛规则（大盲前注、dead button、最小加注、不完整加注不重开加注权、边池、按钮左侧零头）。AI 翻牌前按近似 GTO 混合策略频率表行动，可为每个 AI 单独设定风格（游戏中点击 AI 头像也可改，下一手生效）。设置自动保存在本机。</div>
   </div>
 </div>
 
@@ -180,6 +200,16 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
 </div>
 <div id="levels-overlay" class="overlay hidden">
   <div class="panel"><h2>盲注结构</h2><div id="levels-content"></div><button class="secondary" id="levels-close">关闭</button></div>
+</div>
+<div id="style-overlay" class="overlay hidden">
+  <div class="panel">
+    <h2>AI 玩家风格</h2>
+    <div class="row2"><button class="secondary" id="style-all-gto">一键全部 GTO</button><button class="secondary" id="style-all-random">一键随机</button></div>
+    <label>头像旁显示风格标签 <input type="checkbox" id="style-showlabel"></label>
+    <div id="style-list"></div><div id="style-hint"></div>
+    <div class="small">GTO = 原样执行翻牌前近似 GTO 频率表（微调全为 0）。其他风格是四个参数的预设：入池松紧 / 激进度 / 诈唬频率 / 翻后跟注倾向，可逐人微调（带 * 表示已微调）。游戏中修改于下一手生效。</div>
+    <button class="secondary" id="style-close">关闭</button>
+  </div>
 </div>
 <div id="rank-overlay" class="overlay hidden">
   <div class="panel"><h2 id="rank-title"></h2><div class="rankings" id="rank-list"></div><button class="primary" id="rank-again">再来一局</button><button class="secondary" id="rank-close">关闭</button></div>
@@ -374,7 +404,7 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     this.currentBet = 0; this.lastRaiseSize = 0; this.lastFullBetLevel = 0;
     this.actor = null;
     this.lastAggressor = null;
-    this.log = []; this.handLog = []; this.results = null;
+    this.log = []; this.handLog = []; this.actions = []; this.results = null;
     this.eliminatedCount = 0; this.deadMoney = 0;
     this.showAll = cfg.showAll !== false;
     this.onEvent = cfg.onEvent || null;
@@ -437,6 +467,7 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     this.handNo++;
     if (this.mode === 'sng') this.level = Math.floor((this.handNo - 1) / this.handsPerLevel);
     this.handLog = []; this.results = null; this.board = []; this.phase = 'acting'; this.deadMoney = 0;
+    this.actions = []; // 本手行动序列 {street, seat, type, to}
     this.deck = C.shuffle(C.newDeck(), this.rng);
     for (const p of this.players) {
       p.hole = []; p.bet = 0; p.contrib = 0; p.acted = false; p.raiseLocked = false;
@@ -588,6 +619,7 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
       p.lastAction = (isBet ? '下注 ' : '加注到 ') + to + (p.allIn ? ' 全下' : '');
       this.say(`${p.name} ${isBet ? '下注' : '加注到'} ${to}` + (p.allIn ? '（全下）' : '') + (!full && !isBet ? '（不足最小加注，不重开加注权）' : ''));
     } else throw new Error('未知行动 ' + type);
+    this.actions.push({ street: this.street, seat, type: (type === 'call' && la.call <= 0) ? 'check' : type, to: type === 'raise' ? Math.floor(action.to) : undefined, allIn: p.allIn });
     this.emit('action', { seat, type, to: action.to });
     this.actor = this.nextToAct(seat);
     this.checkRoundEnd();
@@ -746,13 +778,9 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     for (let i = 0; i < n; i++) { s = (s + 1) % n; const p = this.players[s]; if (!p.out && s !== this.sbSeat && s !== this.bbSeat) order.push(s); }
     const k = order.indexOf(seat); const m = order.length; // m 个非盲注位置
     if (k < 0) return '?';
-    const fromEnd = m - 1 - k; // 0 = BTN
-    if (fromEnd === 0) return 'BTN';
-    if (fromEnd === 1) return 'CO';
-    if (fromEnd === 2) return 'HJ';
-    if (k === 0) return 'UTG';
-    if (k === 1) return 'UTG+1';
-    return 'MP';
+    const fromEnd = m - 1 - k; // 0 = BTN；按距按钮距离命名（9 人桌标准：UTG UTG+1 UTG+2 LJ HJ CO BTN）
+    const BY_DIST = ['BTN', 'CO', 'HJ', 'LJ', 'UTG+2', 'UTG+1', 'UTG'];
+    return BY_DIST[Math.min(fromEnd, BY_DIST.length - 1)];
   };
 
   const api = { Game, DEFAULT_LEVELS };
@@ -760,46 +788,414 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
   else window.HoldemEngine = api;
 })();
 
-/* ---- ai.js ---- */
-/* ai.js — 比赛标准打法 AI */
+/* ---- preflop_gto.js ---- */
+/* preflop_gto.js — 翻牌前近似 GTO 混合策略频率表（锦标赛 / BB ante）
+ * 不是实时求解：按公开的标准 GTO 范围知识，用「强度排序 + 牌型特征 + 位置/深度阈值 + 混合带」参数化生成
+ * 169 种起手牌在各节点上的 弃/跟/加注/全下 频率。AI 按频率随机执行（同一手牌有时加注、有时跟注、有时弃牌）。
+ * 风格系统：所有阈值可按 {loose, aggr, bluff, callDown} 四个参数偏移；GTO = 全 0。
+ */
 (function () {
-  const C = (typeof module !== 'undefined' && module.exports) ? require('./cards') : window.HoldemCards;
-  const RANKS = C.RANKS;
-
-  // ---- 169 起手牌强度排名（0=最强 AA ... 168=最弱 32o）近似 Sklansky-Chubukov/常见排序 ----
+  // ---- 169 起手牌强度排序（0 = 最强）----
   const ORDER = ('AA KK QQ AKs JJ AQs KQs AJs KJs TT AKo ATs QJs KTs QTs JTs 99 AQo A9s KQo 88 K9s T9s A8s Q9s J9s AJo A5s 77 A7s KJo A4s A3s A6s QJo 66 K8s T8s A2s 98s J8s ATo Q8s K7s KTo 55 JTo 87s QTo 44 33 22 K6s 97s K5s 76s T7s K4s K3s 65s K2s Q7s 86s 54s J7s A9o Q6s 75s 96s Q5s 64s Q4s Q3s T9o T6s Q2s A8o 53s 85s J6s J9o K9o J5s Q9o 43s 74s J4s J3s 95s J2s 63s A7o T5s T4s 98o 84s A5o T3s A6o 52s T2s A4o 42s 94s J8o 87o Q8o K8o 73s 93s A3o 92s 32s 83s 76o 62s K7o 82s T8o 97o 72s A2o 65o 86o 54o Q7o K6o K5o J7o 75o 96o K4o 64o Q6o K3o 53o 43o K2o 85o Q5o 74o Q4o T7o J6o 63o Q3o 95o J5o Q2o 52o J4o 84o 42o 94o J3o T6o 73o J2o T5o 32o 93o T4o 83o 62o 92o T3o 72o 82o T2o').split(' ');
   const RANK169 = {}; ORDER.forEach((k, i) => RANK169[k] = i);
-  // 兜底：未列出的（极少）按最弱
-  function hRank(key) { return RANK169[key] != null ? RANK169[key] : 168; }
-  // 百分比（0~1，越小越强）
-  function hPct(key) { return hRank(key) / 169; }
+  const RV = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, T: 10, J: 11, Q: 12, K: 13, A: 14 };
+  const FEAT = {};
+  // pct = 组合数加权百分位（该手牌及更强牌占 1326 组合的比例，取区间中点），这样阈值 0.15 ≈ 范围 15%
+  let cum = 0;
+  for (const k of ORDER) {
+    const hi = RV[k[0]], lo = RV[k[1]], pair = hi === lo, suited = k[2] === 's';
+    const combos = pair ? 6 : suited ? 4 : 12;
+    FEAT[k] = { key: k, hi, lo, pair, suited, gap: hi - lo, combos, pct: (cum + combos / 2) / 1326 };
+    cum += combos;
+  }
+  function feat(key) { return FEAT[key] || FEAT['72o']; }
 
-  // 位置开池范围（百分比门槛）—— 满桌 9 人
-  const OPEN_PCT = { UTG: 0.14, 'UTG+1': 0.16, MP: 0.19, HJ: 0.23, CO: 0.30, BTN: 0.45, SB: 0.38, BB: 0.5 };
-  const STYLES = {
-    TAG: { name: '紧凶', open: 1.0, threeBet: 1.0, call: 1.0, cbet: 0.7, bluff: 0.25, agg: 1.0, callDown: 0.9 },
-    LAG: { name: '松凶', open: 1.35, threeBet: 1.4, call: 1.2, cbet: 0.8, bluff: 0.45, agg: 1.3, callDown: 1.0 },
-    ROCK: { name: '紧弱', open: 0.7, threeBet: 0.5, call: 0.8, cbet: 0.5, bluff: 0.08, agg: 0.6, callDown: 0.7 },
-    STATION: { name: '跟注站', open: 1.3, threeBet: 0.5, call: 1.8, cbet: 0.45, bluff: 0.1, agg: 0.6, callDown: 1.6 }
+  // 位置（9 人桌标准名；人数少时按「距按钮距离」映射：6 人桌 UTG = LJ）
+  const POS = ['UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+  const BY_DIST = ['BTN', 'CO', 'HJ', 'LJ', 'UTG+2', 'UTG+1', 'UTG'];
+  // 100BB 9 人桌 BB ante 首入开池比例（近似主流求解器：UTG≈15%，BTN≈46%，SB 加注≈42% 另有 limp）
+  const POS_RFI = { UTG: 0.15, 'UTG+1': 0.165, 'UTG+2': 0.18, LJ: 0.21, HJ: 0.25, CO: 0.31, BTN: 0.46, SB: 0.42, HU: 0.72 };
+  const DEPTHS = [100, 60, 40, 25, 20, 15, 10];
+  function depthBucket(eff) { return eff >= 80 ? 100 : eff >= 50 ? 60 : eff >= 32 ? 40 : eff >= 22 ? 25 : eff >= 17 ? 20 : eff >= 12 ? 15 : 10; }
+  // 深度对开池/跟注/3bet 的系数
+  const DM = {
+    100: { open: 1.0, call: 1.0, tb: 1.0 }, 60: { open: 1.0, call: 0.95, tb: 1.0 }, 40: { open: 0.97, call: 0.8, tb: 1.0 },
+    25: { open: 0.93, call: 0.6, tb: 1.1 }, 20: { open: 0.9, call: 0.45, tb: 1.15 }, 15: { open: 0.85, call: 0.3, tb: 1.2 }, 10: { open: 0.8, call: 0.25, tb: 1.2 }
   };
-
-  // ---- Push/Fold（≤15BB）Nash 近似：按位置剩余人数给推入范围百分比 ----
-  // players behind -> pct of hands to shove, by BB depth（简化近似表）
-  function pushPct(bbDepth, playersBehind) {
-    // 单挑 SB 推：15bb ~ 0.58, 10bb ~ 0.7, 5bb ~ 0.9
-    let base;
-    if (bbDepth <= 4) base = 0.95; else if (bbDepth <= 6) base = 0.8; else if (bbDepth <= 8) base = 0.68; else if (bbDepth <= 10) base = 0.58; else if (bbDepth <= 12) base = 0.48; else base = 0.4;
-    // 后面每多一个人收紧
-    const f = Math.pow(0.72, Math.max(0, playersBehind - 1));
-    return Math.min(0.95, base * f);
+  // Push/Fold（≤15BB，未开池首入全下比例，Nash 近似，BB ante）
+  const PUSH_D = [15, 12, 10, 8, 6, 4];
+  const PUSH = {
+    UTG: [.09, .11, .14, .18, .25, .40], 'UTG+1': [.10, .12, .15, .20, .27, .42], 'UTG+2': [.11, .13, .17, .22, .30, .45],
+    LJ: [.13, .15, .19, .25, .33, .48], HJ: [.15, .18, .22, .28, .37, .52], CO: [.19, .23, .28, .34, .44, .58],
+    BTN: [.27, .32, .38, .46, .56, .70], SB: [.40, .46, .55, .64, .75, .90], HU: [.45, .52, .60, .70, .82, .95], BB: [.40, .46, .55, .64, .75, .90]
+  };
+  function pushPct(pos, eff) {
+    const row = PUSH[pos] || PUSH.LJ;
+    if (eff >= PUSH_D[0]) return row[0] * Math.pow(0.93, eff - PUSH_D[0]);
+    for (let i = 0; i < PUSH_D.length - 1; i++) {
+      if (eff <= PUSH_D[i] && eff >= PUSH_D[i + 1]) { const t = (PUSH_D[i] - eff) / (PUSH_D[i] - PUSH_D[i + 1]); return row[i] + (row[i + 1] - row[i]) * t; }
+    }
+    return row[row.length - 1];
   }
-  function callShovePct(bbDepth, callersBehind) {
-    let base;
-    if (bbDepth <= 4) base = 0.7; else if (bbDepth <= 6) base = 0.5; else if (bbDepth <= 8) base = 0.38; else if (bbDepth <= 10) base = 0.3; else if (bbDepth <= 12) base = 0.24; else base = 0.2;
-    return base * Math.pow(0.75, callersBehind);
+
+  // 混合带：x ≤ thr-w → 1；x ≥ thr+w → 0；中间线性（产生 0~1 之间的混合频率）
+  function band(x, thr, w) { w = w || 0.025; if (thr <= 0) return 0; if (x <= thr - w) return 1; if (x >= thr + w) return 0; return (thr + w - x) / (2 * w); }
+  const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+
+  // ---- 牌型特征得分（越小越偏向该动作）----
+  function openScore(h, eff) {
+    let s = h.pct;
+    if (eff <= 25) { if (h.hi === 14 && !h.suited && !h.pair) s -= 0.03; if (h.suited && !h.pair && h.hi <= 9 && h.gap <= 2) s += 0.04; }
+    return s;
+  }
+  function callScore(h) { // 跟注开池：口袋对、同花连张、同花高牌好；非同花弱 Ax / 弱高张差
+    let s = h.pct;
+    if (h.pair && h.hi <= 10) s -= 0.07;
+    if (h.suited && !h.pair && h.gap <= 2 && h.lo >= 4) s -= 0.06;
+    if (h.suited && h.hi >= 10 && h.lo >= 9) s -= 0.03;
+    if (h.suited && h.hi === 14) s -= 0.02;
+    if (!h.suited && !h.pair && h.hi === 14 && h.lo <= 10) s += 0.06;
+    if (!h.suited && !h.pair && h.hi <= 13 && h.lo <= 11) s += 0.03;
+    return s;
+  }
+  function pushScore(h) { // 全下：非同花 Ax/Kx 价值上升，小同花连张下降
+    let s = h.pct;
+    if (h.hi === 14 && !h.suited && !h.pair) s -= 0.06;
+    if (h.hi === 13 && !h.suited && !h.pair && h.lo >= 7) s -= 0.02;
+    if (h.suited && !h.pair && h.hi <= 10 && h.gap <= 2) s += 0.07;
+    if (h.pair) s -= 0.03;
+    return s;
+  }
+  function callShoveScore(h) { // 跟全下：高牌/对子好，同花连张差
+    let s = h.pct;
+    if (h.pair) s -= 0.04;
+    if (h.hi === 14 && !h.suited && !h.pair) s -= 0.03;
+    if (h.suited && !h.pair && h.hi <= 10 && h.gap <= 2) s += 0.06;
+    return s;
+  }
+  // 3bet 诈唬候选权重
+  function bluffWeight(h, vsLate) {
+    if (h.hi === 14 && h.suited && h.lo <= 5) return 1.0;
+    if (h.hi === 14 && h.suited && h.lo <= 8) return 0.4;
+    if (h.hi === 13 && h.suited && h.lo >= 6 && h.lo <= 9) return 0.6;
+    if (h.suited && !h.pair && h.gap === 1 && h.lo >= 5 && h.hi <= 12) return 0.5;
+    if (h.suited && !h.pair && h.gap === 2 && h.lo >= 7 && h.hi <= 12) return 0.3;
+    if (vsLate && !h.suited && h.hi === 14 && h.lo >= 9 && h.lo <= 11) return 0.35;
+    if (vsLate && !h.suited && h.hi === 13 && h.lo >= 11) return 0.3;
+    return 0;
+  }
+  function bluff4Weight(h) {
+    if (h.hi === 14 && h.suited && h.lo <= 5) return 1.0;
+    if (h.key === 'KQs' || h.key === 'AJs' || h.key === 'ATs') return 0.3;
+    if (h.key === 'AQo') return 0.25;
+    return 0;
   }
 
-  // ---- 蒙特卡洛胜率：对抗 n 个随机（或范围）对手 ----
+  // ---- 风格系数 ----
+  const PRESETS = {
+    GTO: { name: 'GTO', loose: 0, aggr: 0, bluff: 0, callDown: 0 },
+    TAG: { name: '紧凶', loose: -0.15, aggr: 0.35, bluff: 0.05, callDown: -0.1 },
+    LAG: { name: '松凶', loose: 0.45, aggr: 0.5, bluff: 0.45, callDown: 0.1 },
+    ROCK: { name: '紧弱', loose: -0.5, aggr: -0.35, bluff: -0.7, callDown: -0.35 },
+    STATION: { name: '跟注站', loose: 0.5, aggr: -0.6, bluff: -0.5, callDown: 0.85 },
+    MANIAC: { name: '疯子', loose: 0.9, aggr: 0.9, bluff: 0.9, callDown: 0.3 }
+  };
+  const PARAM_KEYS = ['loose', 'aggr', 'bluff', 'callDown'];
+  function styleMul(p) {
+    p = p || PRESETS.GTO;
+    const L = p.loose || 0, A = p.aggr || 0, B = p.bluff || 0, D = p.callDown || 0;
+    return {
+      open: Math.max(0.2, 1 + 0.6 * L + 0.15 * A), call: Math.max(0.2, 1 + 0.7 * L - 0.2 * A),
+      value: Math.max(0.3, 1 + 0.25 * L + 0.4 * A), bluff: Math.max(0, 1 + 0.8 * B + 0.5 * A),
+      push: Math.max(0.3, 1 + 0.4 * L + 0.2 * A), callShove: Math.max(0.3, 1 + 0.3 * L + 0.5 * D), A, L
+    };
+  }
+
+  // 按诈唬权重把 b（占全部组合比例）的质量分配给候选牌
+  function allocBluff(hands, b, weightFn, avail) {
+    const out = {}; let W = 0;
+    for (const k of ORDER) { const w = weightFn(FEAT[k]) * Math.min(1, avail(k)); if (w > 0) W += w * FEAT[k].combos; }
+    if (W <= 0 || b <= 0) return out;
+    const scale = Math.min(1, b * 1326 / W);
+    for (const k of ORDER) { const w = weightFn(FEAT[k]); if (w > 0) out[k] = Math.min(avail(k), w * scale); }
+    return out;
+  }
+
+  // ---------- 节点计算：返回 {fold, call, raise, allin, size}，size 为「加注到」的 BB 倍数 ----------
+  // node: { kind, pos, nPlayers, eff, oppPos, openSize, callers, limpers, behind, potOdds, style }
+  function strategy(key, node) {
+    const h = feat(key);
+    const S = styleMul(node.style);
+    let r;
+    switch (node.kind) {
+      case 'rfi': r = rfi(h, node, S); break;
+      case 'vs_limp': r = vsLimp(h, node, S); break;
+      case 'vs_open': r = vsOpen(h, node, S); break;
+      case 'vs_3bet': r = vs3bet(h, node, S); break;
+      case 'vs_4bet': r = vs4bet(h, node, S); break;
+      case 'vs_shove': r = vsShove(h, node, S); break;
+      default: r = { fold: 1, call: 0, raise: 0, allin: 0, size: 0 };
+    }
+    return finalize(r, h, node, S);
+  }
+
+  function finalize(r, h, node, S) {
+    r.call = clamp01(r.call || 0); r.raise = clamp01(r.raise || 0); r.allin = clamp01(r.allin || 0);
+    // 激进度偏移：正 → 一部分跟注变加注；负 → 一部分（非超强牌）加注变跟注/弃牌
+    const A = S.A;
+    if (A > 0 && node.kind !== 'vs_shove') {
+      const sh = r.call * 0.5 * A;
+      if (node.kind === 'rfi' || node.kind === 'vs_limp') { r.call -= sh; r.raise += sh; }
+      else { r.call -= sh; if (r.size === 'allin' || r.allin > r.raise) r.allin += sh; else r.raise += sh; }
+    } else if (A < 0 && h.pct > 0.04) {
+      const a = -A;
+      if (node.kind === 'rfi') { const sh = r.raise * 0.35 * a; r.raise -= sh; if (node.pos === 'SB' || node.nPlayers === 2) r.call += sh; }
+      else if (node.kind === 'vs_shove') { /* 不变 */ }
+      else { const sh = (r.raise + r.allin) * 0.5 * a; const fr = r.raise + r.allin > 0 ? r.raise / (r.raise + r.allin) : 1; r.raise -= sh * fr; r.allin -= sh * (1 - fr); r.call += sh; }
+    }
+    let s = r.call + r.raise + r.allin;
+    if (s > 1) { r.call /= s; r.raise /= s; r.allin /= s; s = 1; }
+    r.fold = Math.max(0, 1 - s);
+    if (r.fold < 1e-9) r.fold = 0;
+    if (!r.size) r.size = 0;
+    return r;
+  }
+
+  function openSize(node) {
+    const { pos, eff, nPlayers, limpers } = node; const hu = nPlayers === 2;
+    let s;
+    if (hu) s = 2.2; else if (pos === 'SB') s = eff >= 40 ? 3 : 2.5; else s = eff >= 50 ? 2.3 : eff >= 30 ? 2.2 : 2.0;
+    return s + (limpers || 0);
+  }
+
+  function rfi(h, node, S) {
+    const { pos, eff, nPlayers } = node; const hu = nPlayers === 2;
+    const r = { fold: 0, call: 0, raise: 0, allin: 0, size: openSize(node) };
+    const posKey = hu ? 'HU' : pos;
+    if (eff <= 15) { // 纯 push/fold（Nash 近似）
+      const pp = pushPct(posKey, eff) * S.push;
+      r.allin = band(pushScore(h), pp, 0.03); r.size = 'allin';
+      // 12~15BB 的 SB/HU 位置：少量 limp（陷阱 + 弱牌补盲）
+      if ((pos === 'SB' || hu) && eff >= 12) { const lp = (1 - r.allin) * band(h.pct, 0.5, 0.05) * 0.25; r.call = lp; }
+      return r;
+    }
+    const d = depthBucket(eff);
+    const thr = POS_RFI[posKey] * DM[d].open * S.open;
+    let raise = band(openScore(h, eff), thr, 0.03);
+    if (pos === 'SB' || hu) {
+      // SB / HU 按钮：加注 + limp 混合（强牌少量陷阱 limp）
+      const limpThr = hu ? 0.92 : (eff >= 40 ? 0.62 : 0.55) * (0.6 + 0.4 * S.call);
+      let limp = (1 - raise) * band(h.pct, limpThr, 0.05) * (hu ? 0.6 : 1);
+      if (h.pct < 0.03) { const trap = 0.15 * raise; raise -= trap; limp += trap; }
+      r.call = limp;
+    }
+    if (eff <= 20) { const j = raise * 0.3 * (h.pct > 0.04 ? 1 : 0.3); raise -= j; r.allin = j; }
+    r.raise = raise;
+    return r;
+  }
+
+  function vsLimp(h, node, S) {
+    const { pos, eff, limpers, nPlayers } = node; const hu = nPlayers === 2;
+    const r = { fold: 0, call: 0, raise: 0, allin: 0, size: 0 };
+    const isBlind = pos === 'SB' || pos === 'BB';
+    let thr;
+    if (pos === 'BB') thr = Math.max(0.08, 0.2 - 0.05 * (limpers - 1));
+    else if (pos === 'SB') thr = Math.max(0.07, 0.16 - 0.04 * (limpers - 1));
+    else thr = (POS_RFI[hu ? 'HU' : pos] || 0.2) * 0.8 * Math.pow(0.85, limpers - 1);
+    thr *= S.open * (1 + 0.3 * S.A);
+    let iso = band(openScore(h, eff), thr, 0.03);
+    r.size = (isBlind ? 4 : 3) + limpers;
+    if (eff <= 15) { r.allin = iso; r.size = 'allin'; iso = 0; }
+    else if (eff <= 20) { r.allin = iso * 0.5; iso *= 0.5; }
+    r.raise = iso;
+    const rest = 1 - iso - r.allin;
+    if (pos === 'BB') r.call = rest; // 过牌（引擎把 call=0 视为过牌）
+    else if (pos === 'SB') r.call = rest * band(callScore(h), 0.5 * S.call, 0.05);
+    else r.call = rest * band(callScore(h), thr * 1.5 * S.call, 0.04) * 0.5;
+    return r;
+  }
+
+  function vsOpen(h, node, S) {
+    const { pos, eff, oppPos, callers, nPlayers } = node; const hu = nPlayers === 2;
+    const r = { fold: 0, call: 0, raise: 0, allin: 0, size: 0 };
+    const R = (hu ? POS_RFI.HU : POS_RFI[oppPos]) || 0.25; // 开池者范围宽度
+    const d = depthBucket(eff);
+    const os = node.openSize || 2.3;
+    const vsLate = R >= 0.3;
+    let v, c, b;
+    if (pos === 'BB') {
+      if (oppPos === 'SB' || hu) { v = 0.075; c = 0.48; b = 0.07; }
+      else { v = 0.025 + 0.1 * R; c = 0.12 + 0.6 * R; b = 0.02 + 0.09 * R; }
+    } else if (pos === 'SB') { v = 0.025 + 0.1 * R; c = 0.01 + 0.06 * R; b = 0.015 + 0.13 * R; }
+    else { v = 0.025 + 0.07 * R; c = 0.04 + 0.22 * R; b = 0.012 + 0.06 * R; if (pos === 'BTN') c *= 1.15; }
+    // 开池尺寸：越大跟注越紧
+    const sz = Math.pow(Math.min(1.1, Math.max(0.5, 2.5 / os)), 0.7); c *= sz; if (os <= 2.05) c *= 1.1;
+    // 多人：冷跟收紧，挤压诈唬减少
+    if (callers > 0) { c *= Math.pow(0.85, callers); v *= 0.95; b *= 0.6; }
+    // 深度
+    c *= DM[d].call; v *= DM[d].tb; b *= d <= 25 ? 0.7 : d <= 40 ? 0.9 : 1;
+    if (pos === 'BB' && d <= 20 && os <= 2.3) c = Math.max(c, 0.3 * S.call); // BB 面对小加注有赔率
+    // 风格
+    v *= S.value; c *= S.call; b *= S.bluff;
+    // 3bet 尺寸
+    const oop = pos === 'SB' || pos === 'BB';
+    let size = os * (oop ? 3.6 : 3) + (callers || 0) * os;
+    const jam = size >= eff * 0.38 || eff <= 20;
+    // 分配
+    const value = band(h.pct, v, 0.02);
+    let call = (1 - value) * band(callScore(h), v + c, 0.03);
+    let bluff = 0;
+    if (b > 0 && value < 1) {
+      const w = bluffWeight(h, vsLate);
+      if (w > 0) { bluff = Math.min(1 - value, 0.8, w * Math.min(1.2, b * 1326 / bluffMass(vsLate))); call = Math.min(call, 1 - value - bluff); if (call < 0.2 && bluff > 0.5 && (h.hi === 14 || h.suited)) { const c2 = Math.min(1 - value - bluff, 0.2); call = Math.max(call, c2); } }
+    }
+    if (eff <= 20) { // 短码：3bet 基本即 reshove；小对子也可反推
+      let re = 0.35 * R + 0.04; re *= eff <= 10 ? 1.3 : eff <= 15 ? 1 : 0.75; re *= Math.pow(0.8, node.behind || 0) * S.push;
+      const pushF = band(pushScore(h), re, 0.03);
+      r.allin = Math.max(value, pushF); r.size = 'allin';
+      r.call = Math.min(call, 1 - r.allin);
+      return r;
+    }
+    if (jam) { r.allin = value + bluff; r.size = 'allin'; } else { r.raise = value + bluff; r.size = size; }
+    r.call = call;
+    return r;
+  }
+  let _bm = {};
+  function bluffMass(vsLate) {
+    const k = vsLate ? 1 : 0; if (_bm[k]) return _bm[k];
+    let W = 0; for (const key of ORDER) W += bluffWeight(FEAT[key], vsLate) * FEAT[key].combos; return _bm[k] = W;
+  }
+  let _b4m = 0;
+  function bluff4Mass() { if (_b4m) return _b4m; let W = 0; for (const key of ORDER) W += bluff4Weight(FEAT[key]) * FEAT[key].combos; return _b4m = W; }
+
+  function vs3bet(h, node, S) {
+    // 我们开池后面对 3bet
+    const { pos, eff, oppPos, nPlayers } = node; const hu = nPlayers === 2;
+    const r = { fold: 0, call: 0, raise: 0, allin: 0, size: 0 };
+    const R = (hu ? POS_RFI.HU : POS_RFI[pos]) || 0.25; // 我方开池范围
+    const ip = oppPos === 'SB' || oppPos === 'BB'; // 3bet 来自盲注 → 我方有位置
+    const d = depthBucket(eff);
+    let v = 0.02 + 0.04 * R, c = (0.03 + 0.18 * R) * (ip ? 1 : 0.8), b = 0.005 + 0.03 * R;
+    const s3 = node.openSize || 7; // 对方 3bet 到的 BB 数
+    const myOpen = node.myBet || 2.3;
+    const ratio = s3 / myOpen; if (ratio > 3.5) c *= Math.pow(3.5 / ratio, 0.8);
+    if (node.callers > 0) { c *= 0.7; b *= 0.5; }
+    if (d <= 40) c *= 0.8; if (d <= 25) { c *= 0.5; v *= 1.3; }
+    v *= S.value; c *= S.call; b *= S.bluff;
+    const size4 = s3 * 2.3;
+    const jam = size4 >= eff * 0.4 || eff <= 30;
+    const value = band(h.pct, v, 0.015);
+    let call = (1 - value) * band(callScore(h), v + c, 0.03);
+    let bluff = 0;
+    if (b > 0 && value < 1) { const w = bluff4Weight(h); if (w > 0) { bluff = Math.min(1 - value, w * Math.min(1, b * 1326 / bluff4Mass())); call = Math.min(call, 1 - value - bluff); } }
+    if (jam) { r.allin = value + bluff; r.size = 'allin'; } else { r.raise = value + bluff; r.size = size4; }
+    r.call = call;
+    return r;
+  }
+
+  function vs4bet(h, node, S) {
+    // 我们 3bet 后面对 4bet（非全下）
+    const { eff } = node;
+    const r = { fold: 0, call: 0, raise: 0, allin: 0, size: 'allin' };
+    let v = 0.02, c = eff >= 80 ? 0.025 : eff >= 50 ? 0.015 : 0.008;
+    v *= S.value; c *= S.call;
+    const value = band(h.pct, v, 0.01);
+    // AKo 混合全下
+    let bluff = 0; if (h.key === 'A5s' || h.key === 'A4s') bluff = 0.25 * S.bluff;
+    r.allin = Math.min(1, value + bluff * (1 - value));
+    r.call = (1 - r.allin) * band(callScore(h), v + c, 0.02);
+    return r;
+  }
+
+  function vsShove(h, node, S) {
+    // 面对全下（或跟注即等于全下）：按推入者范围估计 Nash 跟注范围
+    const { eff, oppPos, behind, potOdds, nPlayers, pusherKind } = node; const hu = nPlayers === 2;
+    const r = { fold: 0, call: 0, raise: 0, allin: 0, size: 0 };
+    let pr; // 推入者范围宽度估计
+    if (pusherKind === 'reshove') pr = 0.5 * pushPct(hu ? 'HU' : (oppPos || 'LJ'), Math.min(eff, 15));
+    else if (pusherKind === 'open') pr = pushPct(hu ? 'HU' : (oppPos || 'LJ'), Math.min(eff, 20));
+    else pr = (POS_RFI[oppPos] || 0.25) * 0.3; // 深筹码时的 4bet/5bet 全下：很紧
+    let k = eff <= 5 ? 0.85 : eff <= 8 ? 0.75 : eff <= 12 ? 0.68 : eff <= 16 ? 0.62 : 0.5;
+    let cp = pr * k * Math.pow(0.75, behind || 0);
+    if (potOdds != null && potOdds > 0) cp *= Math.min(1.8, Math.max(0.7, 0.42 / potOdds));
+    cp *= S.callShove;
+    r.call = band(callShoveScore(h), cp, 0.03);
+    return r;
+  }
+
+  // ---------- 工具：整表 / 汇总 / 抽样 ----------
+  function table(node) { const t = {}; for (const k of ORDER) t[k] = strategy(k, node); return t; }
+  function summarize(node) {
+    const t = table(node); const s = { fold: 0, call: 0, raise: 0, allin: 0 };
+    for (const k of ORDER) { const c = FEAT[k].combos / 1326; s.fold += t[k].fold * c; s.call += t[k].call * c; s.raise += t[k].raise * c; s.allin += t[k].allin * c; }
+    s.vpip = s.call + s.raise + s.allin; s.aggr = s.raise + s.allin;
+    return s;
+  }
+  function pick(r, rng) {
+    const x = (rng || Math.random)();
+    if (x < r.allin) return { type: 'allin' };
+    if (x < r.allin + r.raise) return r.size === 'allin' ? { type: 'allin' } : { type: 'raise', sizeBB: r.size };
+    if (x < r.allin + r.raise + r.call) return { type: 'call' };
+    return { type: 'fold' };
+  }
+  function posByDist(dist) { return BY_DIST[Math.min(dist, BY_DIST.length - 1)]; }
+
+  const api = { ORDER, RANK169, FEAT, POS, POS_RFI, DEPTHS, PUSH, PUSH_D, pushPct, depthBucket, strategy, table, summarize, pick, PRESETS, PARAM_KEYS, styleMul, posByDist, band, feat };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else window.HoldemGTO = api;
+})();
+
+/* ---- ai.js ---- */
+/* ai.js — AI：翻牌前走近似 GTO 混合策略频率表（preflop_gto.js）+ 风格偏移；翻牌后蒙特卡洛胜率 + 赔率决策 */
+(function () {
+  const isNode = (typeof module !== 'undefined' && module.exports);
+  const C = isNode ? require('./cards') : window.HoldemCards;
+  const G = isNode ? require('./preflop_gto') : window.HoldemGTO;
+  const RANK169 = G.RANK169;
+  function hRank(key) { return RANK169[key] != null ? RANK169[key] : 168; }
+  function hPct(key) { return G.feat(key).pct; }
+
+  // ---- 风格：预设 + 四个连续参数（-1 ~ 1），GTO 全 0 ----
+  const PRESETS = G.PRESETS;
+  const STYLES = {}; // 兼容旧接口：STYLES[key].name
+  for (const k of Object.keys(PRESETS)) STYLES[k] = Object.assign({}, PRESETS[k]);
+  STYLES.RANDOM = { name: '随机', random: true };
+  const STYLE_ORDER = ['GTO', 'TAG', 'LAG', 'ROCK', 'STATION', 'MANIAC', 'RANDOM'];
+  const PARAM_KEYS = G.PARAM_KEYS;
+  const PARAM_NAMES = { loose: '入池松紧', aggr: '激进度', bluff: '诈唬频率', callDown: '翻后跟注倾向' };
+
+  // 把风格配置（{preset, loose, aggr, bluff, callDown}）规范化为参数对象
+  function resolveStyle(cfg, rng) {
+    rng = rng || Math.random;
+    let preset = (cfg && cfg.preset) || (typeof cfg === 'string' ? cfg : 'GTO');
+    const wasRandom = preset === 'RANDOM';
+    if (wasRandom) { const keys = STYLE_ORDER.filter(k => k !== 'RANDOM'); preset = keys[Math.floor(rng() * keys.length)]; }
+    const base = PRESETS[preset] || PRESETS.GTO;
+    const out = { preset, name: base.name };
+    for (const k of PARAM_KEYS) {
+      let v = base[k] || 0;
+      if (!wasRandom && cfg && typeof cfg === 'object' && cfg[k] != null && !isNaN(cfg[k])) v = cfg[k]; // 随机：参数跟随抽到的预设
+      out[k] = Math.max(-1, Math.min(1, +v));
+    }
+    return out;
+  }
+  function styleLabel(st) {
+    if (!st) return '';
+    const base = PRESETS[st.preset] || PRESETS.GTO;
+    const tuned = PARAM_KEYS.some(k => Math.abs((st[k] || 0) - (base[k] || 0)) > 0.01);
+    return (base.name) + (tuned ? '*' : '');
+  }
+
+  // ---- 翻牌后用的派生系数（由四个参数计算）----
+  function postMul(st) {
+    const L = st.loose, A = st.aggr, B = st.bluff, D = st.callDown;
+    return {
+      agg: Math.max(0.2, 1 + 0.6 * A), cbet: Math.max(0.1, Math.min(1, 0.62 + 0.25 * A + 0.1 * B)),
+      bluff: Math.max(0, 0.22 + 0.25 * B + 0.08 * A), callDown: Math.max(0.3, 1 + 0.6 * D + 0.1 * L), trap: Math.max(0, 0.1 - 0.1 * A)
+    };
+  }
+
+  // ---- 蒙特卡洛胜率 ----
   function equity(hole, board, nOpp, iters, rng, oppPct) {
     rng = rng || Math.random;
     const used = new Set(hole.concat(board));
@@ -807,9 +1203,7 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     let wins = 0, ties = 0;
     const need = 5 - board.length;
     for (let it = 0; it < iters; it++) {
-      // 部分洗牌
       const d = deck.slice();
-      const draw = [];
       let oppHoles = [];
       let k = d.length;
       const take = () => { const j = Math.floor(rng() * k); const c = d[j]; d[j] = d[--k]; return c; };
@@ -828,7 +1222,6 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     return (wins + ties) / iters;
   }
 
-  // 听牌 outs 粗估（翻牌/转牌）
   function drawInfo(hole, board) {
     const all = hole.concat(board);
     const sc = [0, 0, 0, 0]; for (const c of all) sc[C.suitOf(c)]++;
@@ -838,20 +1231,27 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     let mask = 0; for (const c of all) mask |= 1 << C.rankOf(c);
     const cur = C.straightHigh(mask);
     let straightOuts = 0;
-    if (cur < 0) {
-      for (let r = 0; r < 13; r++) { if (mask & (1 << r)) continue; if (C.straightHigh(mask | (1 << r)) >= 0) straightOuts += 4; }
-    }
+    if (cur < 0) for (let r = 0; r < 13; r++) { if (mask & (1 << r)) continue; if (C.straightHigh(mask | (1 << r)) >= 0) straightOuts += 4; }
     return { flushDraw, oesd: straightOuts >= 8, gutshot: straightOuts === 4, outs: (flushDraw ? 9 : 0) + (straightOuts >= 8 ? 6 : straightOuts === 4 ? 3 : 0) };
   }
 
-  function makeAI(seat, styleKey, rng) {
+  // ---- AI 实例：style 可在任意时刻 setStyle，下一手生效 ----
+  function makeAI(seat, styleCfg, rng) {
     rng = rng || Math.random;
-    const st = STYLES[styleKey] || STYLES.TAG;
-    const noise = () => 0.85 + rng() * 0.3;
-    return { seat, style: styleKey, styleName: st.name, decide: (game) => decide(game, seat, st, rng, noise) };
+    const ai = { seat, pending: null, st: resolveStyle(styleCfg, rng), lastHand: -1 };
+    ai.style = ai.st.preset; ai.styleName = ai.st.name;
+    ai.setStyle = (cfg) => { ai.pending = cfg; };
+    ai.getStyle = () => ai.st;
+    ai.decide = (game) => {
+      if (ai.pending && game.handNo !== ai.lastHand) { ai.st = resolveStyle(ai.pending, rng); ai.pending = null; ai.style = ai.st.preset; ai.styleName = ai.st.name; }
+      ai.lastHand = game.handNo;
+      return decide(game, seat, ai.st, rng);
+    };
+    ai.applyPending = () => { if (ai.pending) { ai.st = resolveStyle(ai.pending, rng); ai.pending = null; ai.style = ai.st.preset; ai.styleName = ai.st.name; } };
+    return ai;
   }
 
-  function decide(game, seat, st, rng, noise) {
+  function decide(game, seat, st, rng) {
     const la = game.legalActions();
     const p = game.players[seat];
     const bb = game.bb;
@@ -860,194 +1260,160 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     const inHand = game.inHand();
     const nOpp = inHand.length - 1;
     const act = game.active().length;
-    // ICM 压力：接近钱圈/决赛时收紧（SNG 前 3 名有奖）
     let icm = 1.0;
     if (game.mode === 'sng') {
       const paid = 3;
-      if (act <= paid + 2 && act > paid) icm = 0.8; // 泡沫期
-      if (act <= paid) icm = 0.9;
+      if (act <= paid + 2 && act > paid) icm = 0.85;
+      if (act <= paid) icm = 0.92;
       const avg = game.players.filter(q => !q.out).reduce((s, q) => s + q.chips, 0) / act;
-      if (p.chips < avg * 0.4) icm = Math.min(1.15, icm + 0.3); // 短码反而要搏
+      if (p.chips < avg * 0.4) icm = Math.min(1.1, icm + 0.25);
     }
-    const eff = (p.chips + p.bet) / bb; // 自己筹码深度
-    const key = C.holeKey(p.hole[0], p.hole[1]);
-    const pct = hPct(key);
-    const pos = game.positionName(seat);
-    const raiseTo = (mult) => clampRaise(la, Math.round(mult / bb) * bb);
+    if (game.street === 'preflop') return preflop(game, p, la, st, rng, icm);
     const betPot = (frac) => clampRaise(la, Math.round((pot * frac + toCall) / (bb / 2)) * (bb / 2) + la.myBet);
-
-    if (game.street === 'preflop') return preflop(game, p, la, st, rng, noise, icm, eff, pct, pos, nOpp, raiseTo);
-    return postflop(game, p, la, st, rng, noise, icm, pct, nOpp, betPot);
+    return postflop(game, p, la, st, rng, icm, nOpp, betPot);
   }
 
   function clampRaise(la, to) {
     to = Math.max(la.minRaiseTo, Math.min(la.maxRaiseTo, to));
-    // 若超过 85% 的筹码，直接全下
     if (to >= la.maxRaiseTo * 0.85) to = la.maxRaiseTo;
     return to;
   }
 
-  function preflop(game, p, la, st, rng, noise, icm, eff, pct, pos, nOpp, raiseTo) {
+  // 9 人桌标准位置名：按「距按钮的距离」把当前桌人数映射到 9 人桌名字
+  function gtoPos(game, seat) {
+    const act = game.active();
+    if (act.length === 2) return seat === game.bbSeat ? 'BB' : 'BTN';
+    if (seat === game.bbSeat) return 'BB';
+    if (seat === game.sbSeat) return 'SB';
+    const n = game.players.length;
+    const order = []; let s = game.bbSeat;
+    for (let i = 0; i < n; i++) { s = (s + 1) % n; const q = game.players[s]; if (!q.out && s !== game.sbSeat && s !== game.bbSeat) order.push(s); }
+    const k = order.indexOf(seat); if (k < 0) return 'LJ';
+    return G.posByDist(order.length - 1 - k);
+  }
+
+  // 翻前节点解析：从本手行动序列判断 自己处于哪个节点
+  function preflopNode(game, p, la) {
     const bb = game.bb;
-    const seatsLeft = game.players.filter(q => !q.folded && !q.allIn && q.seat !== p.seat && !q.acted).length;
-    const raisers = game.players.filter(q => !q.folded && q.bet > bb).length;
-    const isRaised = la.currentBet > bb;
-    const openPct = (OPEN_PCT[pos] || 0.2) * st.open * icm * noise();
-    // ---- Push/Fold 短码（≤15BB）----
-    const effStack = Math.min(eff, maxOppStack(game, p) / bb);
-    if (effStack <= 15) {
-      if (!isRaised) {
-        const limpers = game.players.filter(q => !q.folded && q.bet === bb && q.seat !== game.bbSeat).length;
-        const pp = pushPct(effStack, seatsLeft + limpers) * st.open * icm * noise();
-        if (pct <= pp) return { type: 'allin' };
-        if (la.check) return { type: 'check' };
-        if (pos === 'BB' || pos === 'SB') {
-          // 盲注位跟注便宜的完成
-          if (la.call <= bb / 2 && pct < 0.6) return { type: 'call' };
-        }
-        return { type: 'fold' };
-      } else {
-        const behind = game.players.filter(q => !q.folded && !q.allIn && q.seat !== p.seat && !q.acted).length;
-        const cp = callShovePct(effStack, behind) * st.call * icm * noise();
-        const committing = la.call >= p.chips * 0.6; // 跟注即等于全下
-        if (committing) {
-          // 面对（近似）全下：按底池赔率 + 对手范围真实胜率
-          const potOdds = la.call / (la.pot + la.call);
-          const eq = equity(p.hole, [], Math.max(1, raisers), 200, rng, 0.3);
-          if (pct <= cp || eq > potOdds + 0.06) return la.canRaise ? { type: 'allin' } : { type: 'call' };
-        } else {
-          // 反推（reshove）范围：比跟全下范围略宽，但不随便拿垃圾牌推
-          if (pct <= cp * 1.15) return { type: 'allin' };
-          // BB 面对最小加注，便宜看翻牌
-          if (pos === 'BB' && la.call <= bb && pct < 0.45 * st.call) return { type: 'call' };
-        }
-        if (la.check) return { type: 'check' };
-        return { type: 'fold' };
-      }
+    const acts = game.actions.filter(a => a.street === 'preflop');
+    const raises = acts.filter(a => a.type === 'raise');
+    const nRaises = raises.length;
+    const callers = acts.filter(a => a.type === 'call' && a.seat !== p.seat && (nRaises === 0 || a.seat !== raises[nRaises - 1].seat)).length;
+    const limpers = nRaises === 0 ? game.players.filter(q => !q.folded && q.bet === bb && q.seat !== game.bbSeat && q.seat !== p.seat).length : 0;
+    const behind = game.players.filter(q => !q.folded && !q.allIn && q.seat !== p.seat && !q.acted).length;
+    const myRaises = raises.filter(a => a.seat === p.seat).length;
+    const lastRaiser = nRaises ? game.players[raises[nRaises - 1].seat] : null;
+    const eff = effStackBB(game, p);
+    const pos = gtoPos(game, p.seat);
+    const nPlayers = game.active().length;
+    const node = { pos, nPlayers, eff, callers, limpers, behind, openSize: la.currentBet / bb, myBet: p.bet / bb };
+    const facingAllIn = lastRaiser && lastRaiser.allIn;
+    const committing = la.call >= p.chips * 0.6; // 跟注即（近似）全下
+    if (nRaises === 0) {
+      if (limpers > 0) node.kind = 'vs_limp'; else node.kind = 'rfi';
+      return node;
     }
-    // ---- 正常筹码深度 ----
-    if (!isRaised) {
-      const limpers = game.players.filter(q => !q.folded && q.bet === bb && q.seat !== game.bbSeat).length;
-      if (pct <= openPct) {
-        // 开池加注：2.2~2.5bb + 每个溜入者 1bb；大前注时偏小
-        const mult = (2.2 + rng() * 0.4 + limpers) * bb;
-        return { type: 'raise', to: raiseTo(mult) };
-      }
-      if (la.check) {
-        // BB 免费看翻牌
-        return { type: 'check' };
-      }
-      // SB 补盲：投机牌
-      if (pos === 'SB' && pct < 0.55 * st.call && la.call <= bb / 2) return { type: 'call' };
-      return { type: 'fold' };
+    node.oppPos = gtoPos(game, lastRaiser.seat);
+    if (facingAllIn || committing) {
+      node.kind = 'vs_shove';
+      node.potOdds = la.call / (la.pot + la.call);
+      node.pusherKind = nRaises === 1 ? 'open' : (nRaises === 2 ? 'reshove' : 'deep');
+      return node;
     }
-    // 面对加注
-    const potOdds = la.call / (la.pot + la.call);
-    const sizeBB = la.currentBet / bb;
-    const nRaises = countRaises(game);
-    // 3-bet 范围
-    const threeBetPct = (pos === 'BB' || pos === 'SB' ? 0.07 : 0.06) * st.threeBet * icm * noise();
-    const fourBetPct = 0.025 * st.threeBet * icm * noise();
-    const callPct = (pos === 'BB' ? 0.35 : pos === 'BTN' || pos === 'CO' ? 0.22 : 0.15) * st.call * icm * noise();
-    // 面对的加注越大，跟注范围越紧
-    const sizeAdj = Math.max(0.4, 1 - Math.max(0, sizeBB - 3) * 0.06);
-    if (nRaises >= 2) {
-      // 面对 3-bet / 4-bet
-      if (pct <= fourBetPct) {
-        if (la.canRaise) return { type: 'raise', to: raiseTo(la.currentBet * 2.3 + la.pot * 0.2) };
-        return { type: 'call' };
-      }
-      const eq = equity(p.hole, [], 1, 150, rng, 0.08);
-      if ((pct <= 0.08 * st.call * sizeAdj || (eq > potOdds + 0.1 && la.call < p.chips * 0.25)) && la.call <= p.chips) return { type: 'call' };
-      if (la.check) return { type: 'check' };
-      return { type: 'fold' };
-    }
-    if (pct <= threeBetPct || (st.bluff > 0.3 && rng() < st.bluff * 0.25 && pct < 0.45 && pct > 0.25 && seatsLeft <= 2)) {
-      if (la.canRaise) {
-        const oop = pos === 'SB' || pos === 'BB';
-        const to = raiseTo(la.currentBet * (oop ? 3.3 : 2.8) + (raisers > 1 ? la.pot * 0.3 : 0));
-        return { type: 'raise', to };
-      }
-      return { type: 'call' };
-    }
-    if (pct <= callPct * sizeAdj && la.call <= p.chips * 0.35) return { type: 'call' };
-    // BB 面对小加注有赔率防守
-    if (pos === 'BB' && potOdds < 0.25 && pct < 0.6 * st.call) return { type: 'call' };
-    if (la.check) return { type: 'check' };
-    return { type: 'fold' };
+    if (nRaises === 1) node.kind = 'vs_open';
+    else if (nRaises === 2) node.kind = myRaises >= 1 ? 'vs_3bet' : 'vs_open_sq'; // 冷面对 3bet：按 vs_open 收紧处理
+    else node.kind = myRaises >= 1 ? 'vs_4bet' : 'vs_open_sq';
+    return node;
   }
 
-  function countRaises(game) {
-    // 本轮加注次数（从日志中数：翻前）
-    let n = 0; for (const l of game.handLog) if (/加注到/.test(l)) n++;
-    return n;
-  }
-  function maxOppStack(game, p) {
+  function effStackBB(game, p) {
     let m = 0; for (const q of game.players) if (!q.folded && q.seat !== p.seat) m = Math.max(m, q.chips + q.bet);
-    return m || p.chips;
+    return Math.min(p.chips + p.bet, m || (p.chips + p.bet)) / game.bb;
   }
 
-  function postflop(game, p, la, st, rng, noise, icm, pct, nOpp, betPot) {
+  function preflop(game, p, la, st, rng, icm) {
+    const bb = game.bb;
+    const node = preflopNode(game, p, la);
+    node.style = st;
+    const key = C.holeKey(p.hole[0], p.hole[1]);
+    let r;
+    if (node.kind === 'vs_open_sq') {
+      // 冷面对 3bet/4bet：用 vs_3bet 的节点近似但更紧（只保留价值）
+      const base = G.strategy(key, Object.assign({}, node, { kind: 'vs_3bet', pos: node.oppPos === 'BB' ? 'BTN' : node.pos }));
+      r = { fold: 0, call: base.call * 0.5, raise: base.raise * 0.7, allin: base.allin * 0.7, size: base.size };
+      r.fold = Math.max(0, 1 - r.call - r.raise - r.allin);
+    } else r = G.strategy(key, node);
+    // ICM：泡沫期收紧非价值部分
+    if (icm < 1) { const f = icm; r = { fold: 0, call: r.call * f, raise: r.raise * f, allin: r.allin * f, size: r.size }; r.fold = Math.max(0, 1 - r.call - r.raise - r.allin); }
+    const a = G.pick(r, rng);
+    // 转成引擎合法行动
+    if (a.type === 'fold') return la.check ? { type: 'check' } : { type: 'fold' };
+    if (a.type === 'call') return la.call > 0 ? { type: 'call' } : { type: 'check' };
+    if (a.type === 'allin') return la.canRaise ? { type: 'allin' } : { type: 'call' };
+    // raise：sizeBB → 筹码
+    if (!la.canRaise) return la.call > 0 ? { type: 'call' } : { type: 'check' };
+    let to = Math.round(a.sizeBB * bb / (bb / 2)) * (bb / 2);
+    // 相对尺寸微抖动 ±5%
+    to = Math.round(to * (0.95 + rng() * 0.1) / (bb / 2)) * (bb / 2);
+    return { type: 'raise', to: clampRaise(la, to) };
+  }
+
+  function countRaises(game) { return game.actions.filter(a => a.street === 'preflop' && a.type === 'raise').length; }
+
+  function postflop(game, p, la, st, rng, icm, nOpp, betPot) {
+    const M = postMul(st);
+    const noise = () => 0.88 + rng() * 0.24;
     const pot = la.pot; const toCall = la.call; const bb = game.bb;
     const board = game.board;
     const iters = nOpp > 2 ? 160 : 220;
-    // 对手范围：翻前有人加注则范围偏紧
     const oppPct = countRaises(game) > 0 ? 0.3 : 0.55;
     const eq = equity(p.hole, board, Math.min(nOpp, 3), iters, rng, oppPct);
     const di = drawInfo(p.hole, board);
-    const isAgg = game.streetAggressor === p.seat;
     const wasPreAgg = game.lastAggressor === p.seat && game.street === 'flop';
-    const score = C.evaluate(p.hole.concat(board));
-    const cat = C.category(score);
-    const spr = p.chips / Math.max(pot, 1);
     const streetsLeft = game.street === 'flop' ? 2 : game.street === 'turn' ? 1 : 0;
     const n = noise();
-    // 对多人时需要更高胜率
     const need = 1 / (nOpp + 1);
-    const strong = eq > need + 0.25 * n;   // 价值
+    const strong = eq > need + 0.25 * n;
     const medium = eq > need + 0.08;
     const drawEq = streetsLeft > 0 && di.outs > 0 ? di.outs * (streetsLeft === 2 ? 0.04 : 0.02) : 0;
 
     if (toCall === 0) {
-      // 无人下注
       let betChance = 0;
-      if (strong) betChance = 0.85 * st.agg;
-      else if (medium) betChance = 0.5 * st.agg;
-      else if (wasPreAgg) betChance = st.cbet * (nOpp === 1 ? 1 : 0.6);
-      else if (di.outs >= 8) betChance = 0.55 * st.agg; // 半诈唬
-      else betChance = st.bluff * 0.5 * (nOpp === 1 ? 1 : 0.4);
-      if (game.street === 'river' && !strong && !medium) betChance = st.bluff * 0.35 * (nOpp === 1 ? 1 : 0.3);
-      if (p.chips <= pot * 0.5 && medium) betChance = 1; // 短码干脆推
-      if (rng() < betChance * icm) {
+      if (strong) betChance = 0.85 * M.agg * (1 - M.trap);
+      else if (medium) betChance = 0.5 * M.agg;
+      else if (wasPreAgg) betChance = M.cbet * (nOpp === 1 ? 1 : 0.6);
+      else if (di.outs >= 8) betChance = 0.55 * M.agg;
+      else betChance = M.bluff * 0.5 * (nOpp === 1 ? 1 : 0.4);
+      if (game.street === 'river' && !strong && !medium) betChance = M.bluff * 0.35 * (nOpp === 1 ? 1 : 0.3);
+      if (p.chips <= pot * 0.5 && medium) betChance = 1;
+      if (rng() < Math.min(1, betChance * icm)) {
         let frac;
         if (strong) frac = 0.55 + rng() * 0.25; else if (medium) frac = 0.4 + rng() * 0.2; else frac = 0.33 + rng() * 0.2;
         if (board.length === 3 && !strong) frac = Math.min(frac, 0.45);
         if (game.street === 'river' && strong) frac = 0.6 + rng() * 0.4;
+        frac *= 0.85 + 0.15 * M.agg;
         if (p.chips <= pot * 1.2 && (strong || medium)) return { type: 'allin' };
         return la.canRaise ? { type: 'raise', to: betPot(frac) } : { type: 'check' };
       }
       return { type: 'check' };
     }
-    // 面对下注
     const potOdds = toCall / (pot + toCall);
     const implied = streetsLeft > 0 ? potOdds * 0.75 : potOdds;
     const totalEq = Math.min(0.95, eq + drawEq * 0.5);
-    const raiseChance = strong ? 0.6 * st.agg : (di.outs >= 8 && streetsLeft > 0 ? 0.25 * st.agg : st.bluff * 0.12);
+    const raiseChance = strong ? 0.6 * M.agg : (di.outs >= 8 && streetsLeft > 0 ? 0.25 * M.agg : M.bluff * 0.12);
     if (la.canRaise && rng() < raiseChance * icm && (strong || p.chips > toCall * 3)) {
       if (la.maxRaiseTo <= la.currentBet * 3 || p.chips <= pot) return { type: 'allin' };
       return { type: 'raise', to: Math.max(la.minRaiseTo, Math.min(la.maxRaiseTo, Math.round((la.currentBet * 2.8 + pot * 0.3) / bb) * bb)) };
     }
-    const callFactor = st.callDown * icm;
+    const callFactor = M.callDown * icm;
     if (totalEq * callFactor > implied + 0.02) return { type: 'call' };
-    // 大牌面对全下，按真实赔率
     if (eq > potOdds + 0.05 && toCall >= p.chips) return { type: 'call' };
-    // 便宜跟注防守（河牌抓诈唬）
-    if (game.street === 'river' && potOdds < 0.3 && eq > 0.3 && rng() < 0.35 * st.callDown) return { type: 'call' };
+    if (game.street === 'river' && potOdds < 0.3 && eq > 0.3 && rng() < 0.35 * M.callDown) return { type: 'call' };
     return { type: 'fold' };
   }
 
-  const api = { makeAI, equity, drawInfo, hPct, hRank, STYLES, pushPct, OPEN_PCT, RANK169 };
-  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  const api = { makeAI, equity, drawInfo, hPct, hRank, STYLES, STYLE_ORDER, PRESETS, PARAM_KEYS, PARAM_NAMES, resolveStyle, styleLabel, postMul, RANK169, GTO: G, gtoPos, preflopNode };
+  if (isNode) module.exports = api;
   else window.HoldemAI = api;
 })();
 
@@ -1057,7 +1423,7 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
   const C = window.HoldemCards, E = window.HoldemEngine, AI = window.HoldemAI;
   const $ = id => document.getElementById(id);
   const AI_NAMES = ['老张', '阿明', '小李', '大伟', '琳达', '阿强', '老王', '小美', '阿杰', '胖子', '阿凯', '老陈'];
-  const DEFAULTS = { mode: 'sng', players: 6, startChips: 10000, handsPerLevel: 10, cashSB: 50, cashBB: 100, speed: 1, helper: false, name: '我' };
+  const DEFAULTS = { mode: 'sng', players: 6, startChips: 10000, handsPerLevel: 10, cashSB: 50, cashBB: 100, speed: 1, helper: false, name: '我', showStyle: true, aiStyles: {} };
   let settings = loadSettings();
   let game = null, ais = [], timer = null, busy = false, spectating = false;
   let humanSeat = 0;
@@ -1089,7 +1455,9 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     for (let i = 1; i < n; i++) {
       const deg = 90 + gap + (i - 1) * (360 - 2 * gap) / (n - 2);
       const ang = deg * Math.PI / 180;
-      const x = 50 + rx * Math.cos(ang), y = 50 + ry * Math.sin(ang);
+      let x = 50 + rx * Math.cos(ang), y = 50 + ry * Math.sin(ang);
+      // 手机上把座位框限制在可视区内（半个座位宽 ≈ 10%）
+      if (mobile) { const half = (n >= 8 ? 38 : 42) / window.innerWidth * 100 + 1; x = Math.max(half, Math.min(100 - half, x)); }
       out.push({ x, y });
     }
     return out;
@@ -1110,15 +1478,67 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
       const betY = pos[i].y > 60 ? '-24px' : pos[i].y < 40 ? '100%' : '30%';
       d.innerHTML = `<div class="box"><div class="name"></div><div class="pos"></div><div class="chips"></div><div class="cards"></div><div class="act"></div><div class="rank"></div></div>
         <div class="bet" style="left:${betX};top:${betY}"></div><div class="btnmark hidden" style="left:${pos[i].x < 50 ? '100%' : '-18px'};top:0"></div>`;
+      if (!p.isHuman) { d.classList.add('clickable'); d.onclick = () => openStylePanel(p.seat); }
       wrap.appendChild(d);
     }
   }
 
+  // ---------- 风格设置 ----------
+  function styleCfg(seat) {
+    const c = settings.aiStyles && settings.aiStyles[seat];
+    const out = { preset: 'GTO', loose: 0, aggr: 0, bluff: 0, callDown: 0 };
+    if (c && typeof c === 'object') { if (AI.STYLES[c.preset]) out.preset = c.preset; for (const k of AI.PARAM_KEYS) if (c[k] != null && !isNaN(c[k])) out[k] = Math.max(-1, Math.min(1, +c[k])); }
+    if (!c) { const base = AI.PRESETS[out.preset]; for (const k of AI.PARAM_KEYS) out[k] = base[k] || 0; }
+    return out;
+  }
+  function setStyleCfg(seat, cfg) {
+    settings.aiStyles = settings.aiStyles || {};
+    settings.aiStyles[seat] = cfg; saveSettings();
+    if (game && ais[seat]) { ais[seat].setStyle(cfg); if (game.phase !== 'acting') ais[seat].applyPending(); syncStyleNames(); render(); }
+  }
+  function syncStyleNames() {
+    if (!game) return;
+    for (const p of game.players) if (!p.isHuman && ais[p.seat]) { const st = ais[p.seat].pending ? AI.resolveStyle(ais[p.seat].pending) : ais[p.seat].getStyle(); p.style = st.preset; p.styleName = AI.styleLabel(st) + (ais[p.seat].pending && game.phase === 'acting' ? '(下手)' : ''); }
+  }
+  let styleSeat = null;
+  function openStylePanel(seat) {
+    const n = settings.players; styleSeat = seat;
+    const list = $('style-list'); list.innerHTML = '';
+    const seats = game ? game.players.filter(p => !p.isHuman).map(p => p.seat) : Array.from({ length: n - 1 }, (_, i) => i + 1);
+    for (const sd of seats) {
+      const cfg = styleCfg(sd);
+      const nm = game ? game.players[sd].name : `AI ${sd}`;
+      const row = document.createElement('div'); row.className = 'style-row' + (sd === seat ? ' sel' : ''); row.dataset.seat = sd;
+      let opts = ''; for (const k of AI.STYLE_ORDER) opts += `<option value="${k}" ${cfg.preset === k ? 'selected' : ''}>${AI.STYLES[k].name}</option>`;
+      let sliders = '';
+      for (const k of AI.PARAM_KEYS) sliders += `<label class="sl"><span>${AI.PARAM_NAMES[k]}</span><input type="range" min="-100" max="100" data-k="${k}" value="${Math.round(cfg[k] * 100)}"><b>${fmtP(cfg[k])}</b></label>`;
+      row.innerHTML = `<div class="hd"><span class="nm">${nm}</span><select class="preset">${opts}</select><button class="adv">微调</button></div><div class="advbox ${sd === seat && seat != null ? '' : 'hidden'}">${sliders}</div>`;
+      const sel = row.querySelector('select.preset');
+      sel.onchange = () => { const c = { preset: sel.value }; const base = AI.PRESETS[sel.value] || AI.PRESETS.GTO; for (const k of AI.PARAM_KEYS) c[k] = base[k] || 0; setStyleCfg(sd, c); row.querySelectorAll('input[type=range]').forEach(inp => { inp.value = Math.round(c[inp.dataset.k] * 100); inp.nextElementSibling.textContent = fmtP(c[inp.dataset.k]); }); };
+      row.querySelector('button.adv').onclick = () => row.querySelector('.advbox').classList.toggle('hidden');
+      row.querySelectorAll('input[type=range]').forEach(inp => inp.oninput = () => { const c = styleCfg(sd); if (c.preset === 'RANDOM') c.preset = 'GTO'; c[inp.dataset.k] = parseInt(inp.value, 10) / 100; inp.nextElementSibling.textContent = fmtP(c[inp.dataset.k]); setStyleCfg(sd, c); });
+      list.appendChild(row);
+    }
+    $('style-showlabel').checked = !!settings.showStyle;
+    $('style-hint').textContent = seats.length > 4 ? `共 ${seats.length} 位 AI · 列表可上下滚动` : '';
+    $('style-overlay').classList.remove('hidden');
+    if (seat != null) { const el = list.querySelector(`.style-row[data-seat="${seat}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); }
+  }
+  function fmtP(v) { v = Math.round(v * 100); return (v > 0 ? '+' : '') + v; }
+  function setAllStyles(preset) {
+    const n = settings.players;
+    const seats = game ? game.players.filter(p => !p.isHuman).map(p => p.seat) : Array.from({ length: n - 1 }, (_, i) => i + 1);
+    for (const sd of seats) { const c = { preset }; const base = AI.PRESETS[preset] || AI.PRESETS.GTO; for (const k of AI.PARAM_KEYS) c[k] = base[k] || 0; setStyleCfg(sd, c); }
+    openStylePanel(styleSeat);
+  }
+
   function render() {
     if (!game) return;
+    syncStyleNames();
     const bl = game.blinds();
-    $('tb-level').textContent = (game.mode === 'sng' ? `级别 ${game.level + 1} · ` : '现金局 · ') + `盲注 ${bl.sb}/${bl.bb}` + (bl.ante ? ` 前注 ${bl.ante}` : '');
-    $('tb-hand').textContent = `第 ${game.handNo} 手`;
+    const narrow = window.innerWidth < 420;
+    $('tb-level').textContent = (game.mode === 'sng' ? (narrow ? `L${game.level + 1} ` : `级别 ${game.level + 1} · `) : (narrow ? '现金 ' : '现金局 · ')) + (narrow ? '' : '盲注 ') + `${bl.sb}/${bl.bb}` + (bl.ante ? (narrow ? `(${bl.ante})` : ` 前注 ${bl.ante}`) : '');
+    $('tb-hand').textContent = narrow ? `#${game.handNo}` : `第 ${game.handNo} 手`;
     const pots = game.computePots();
     const potTotal = game.potTotal();
     let potHtml = `底池 ${potTotal}`;
@@ -1130,7 +1550,7 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     for (const p of game.players) {
       const d = $('seat-' + p.seat); if (!d) continue;
       d.className = 'seat' + (p.folded && !p.out ? ' folded' : '') + (p.out ? ' out' : '') + (game.phase === 'acting' && game.actor === p.seat ? ' acting' : '') + (game.results && game.results.winners[p.seat] ? ' winner' : '');
-      d.querySelector('.name').textContent = p.name + (p.isHuman ? '' : (p.styleName ? ` · ${p.styleName}` : ''));
+      d.querySelector('.name').textContent = p.name + (p.isHuman || !settings.showStyle ? '' : (p.styleName ? ` · ${p.styleName}` : ''));
       d.querySelector('.pos').textContent = p.out ? '' : game.positionName(p.seat);
       d.querySelector('.chips').textContent = p.out ? '已出局' : p.chips + (p.allIn ? ' 全下' : '');
       const cs = d.querySelector('.cards'); cs.innerHTML = '';
@@ -1279,6 +1699,7 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
       for (const p of game.players) if (p.chips === 0) { game.rebuy(p.seat, settings.startChips); if (p.isHuman) toast(`已补码 ${settings.startChips}`); }
     }
     $('msg').textContent = '';
+    for (const a of ais) if (a) a.applyPending();
     if (!game.startHand()) { showRankings(); return; }
     render(); afterAction();
   }
@@ -1321,16 +1742,13 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     settings.name = ($('s-name').value || '我').slice(0, 6);
     saveSettings();
     const n = settings.players;
-    const styleKeys = Object.keys(AI.STYLES);
     const names = [settings.name]; const styles = [null];
     const pool = AI_NAMES.slice().sort(() => Math.random() - .5);
-    for (let i = 1; i < n; i++) { names.push(pool[i - 1]); styles.push(styleKeys[Math.floor(Math.random() * styleKeys.length)]); }
-    // 保证至少一个 TAG 和一个 LAG
-    if (n > 2) { styles[1] = 'TAG'; styles[2] = 'LAG'; }
+    for (let i = 1; i < n; i++) { names.push(pool[i - 1]); styles.push(styleCfg(i).preset); }
     humanSeat = 0; spectating = false;
     game = new E.Game({ mode: settings.mode, numPlayers: n, names, styles, startChips: settings.startChips, handsPerLevel: settings.handsPerLevel, cashSB: settings.cashSB, cashBB: settings.cashBB, humanSeat: 0, showAll: false });
-    ais = game.players.map(p => p.isHuman ? null : AI.makeAI(p.seat, p.style));
-    for (const p of game.players) if (!p.isHuman) p.styleName = AI.STYLES[p.style].name;
+    ais = game.players.map(p => p.isHuman ? null : AI.makeAI(p.seat, styleCfg(p.seat)));
+    syncStyleNames();
     $('setup-overlay').classList.add('hidden'); $('rank-overlay').classList.add('hidden'); $('btn-skip').classList.add('hidden');
     renderSeats();
     nextHand();
@@ -1395,6 +1813,12 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     $('rank-again').onclick = () => { $('rank-overlay').classList.add('hidden'); fillSetup(); $('setup-overlay').classList.remove('hidden'); };
     $('rank-close').onclick = () => $('rank-overlay').classList.add('hidden');
     $('s-helper').onchange = () => { settings.helper = $('s-helper').checked; saveSettings(); if (game) render(); };
+    $('s-styles').onclick = () => { settings.players = parseInt($('s-players').value, 10); openStylePanel(null); };
+    $('tb-styles').onclick = () => openStylePanel(null);
+    $('style-close').onclick = () => $('style-overlay').classList.add('hidden');
+    $('style-all-gto').onclick = () => setAllStyles('GTO');
+    $('style-all-random').onclick = () => { const keys = AI.STYLE_ORDER.filter(k => k !== 'RANDOM' && k !== 'GTO'); const n = settings.players; const seats = game ? game.players.filter(p => !p.isHuman).map(p => p.seat) : Array.from({ length: n - 1 }, (_, i) => i + 1); for (const sd of seats) { const preset = keys[Math.floor(Math.random() * keys.length)]; const c = { preset }; const base = AI.PRESETS[preset]; for (const k of AI.PARAM_KEYS) c[k] = base[k] || 0; setStyleCfg(sd, c); } openStylePanel(styleSeat); };
+    $('style-showlabel').onchange = () => { settings.showStyle = $('style-showlabel').checked; saveSettings(); if (game) render(); };
     $('s-speed').onchange = () => { settings.speed = parseFloat($('s-speed').value); saveSettings(); };
     window.addEventListener('resize', () => { if (game) { renderSeats(); render(); } });
   }
@@ -1406,7 +1830,7 @@ table.lv tr.cur { color: #ffd54a; font-weight: 600; }
     const origStart = $('s-start').onclick;
     $('s-start').onclick = () => { origStart(); $('s-cancel').classList.remove('hidden'); };
   });
-  window.__holdem = { get game() { return game; }, newGame, nextHand };
+  window.__holdem = { get game() { return game; }, get ais() { return ais; }, newGame, nextHand, openStylePanel, setStyleCfg, styleCfg };
 })();
 
 </script>
