@@ -264,13 +264,26 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
   #pot .main { font-size: 15px; } #pot .main b { font-size: 18px; } #pot .side { font-size: 12.5px; } #msg { font-size: 15px; } #board { gap: 7px; }
 }
 
+/* 难度 */
+.panel .diffdesc { margin-top: -4px; margin-bottom: 6px; }
+#diff-list { margin: 8px 0; }
+.diff-row { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; margin: 6px 0; background: #0f1713; cursor: pointer; }
+.diff-row.sel { border-color: var(--gold); background: #15211b; }
+.diff-row .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line2); flex: none; }
+.diff-row.sel .dot { background: var(--gold); border-color: var(--gold); }
+.diff-row .tt { flex: 1; min-width: 0; }
+.diff-row .tt b { display: block; font-size: 14px; color: #fff; }
+.diff-row .tt span { display: block; font-size: 11.5px; color: var(--text2); line-height: 1.4; margin-top: 2px; }
+#tb-diff.hard { border-color: #b45309; color: #fcd34d; }
+#tb-diff.hell { border-color: #b91c1c; color: #fca5a5; }
+
 </style>
 </head>
 <body class="four-color">
 <div id="app">
   <div id="topbar">
     <div class="info"><div class="l1" id="tb-l1">—</div><div class="l2" id="tb-l2"></div></div>
-    <div class="btns"><button id="tb-peek" title="查看对手底牌">底牌</button><button id="tb-hist">历史</button><button id="tb-menu">菜单</button></div>
+    <div class="btns"><button id="tb-peek" title="查看对手底牌">底牌</button><button id="tb-hist">历史</button><button id="tb-diff" title="切换 AI 难度">难度</button><button id="tb-menu">菜单</button></div>
   </div>
   <div id="table-wrap">
     <div id="table">
@@ -332,6 +345,8 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
       <label>小盲 <input type="number" id="s-sb" min="1"></label>
       <label>大盲 <input type="number" id="s-bb" min="2"></label>
     </div>
+    <label>AI 难度 <select id="s-diff"></select></label>
+    <div class="small diffdesc" id="s-diff-desc"></div>
     <label>AI 速度 <select id="s-speed"><option value="1">正常</option><option value="2">快（2 倍）</option><option value="4">很快（4 倍）</option><option value="10">极速（自动连打）</option></select></label>
     <button class="secondary" id="s-styles">AI 玩家风格设置…</button>
     <h3>显示</h3>
@@ -341,7 +356,7 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     <label>练习辅助（胜率 / 底池赔率） <input type="checkbox" id="s-helper"></label>
     <button class="primary" id="s-start">开始新牌局</button>
     <button class="secondary" id="s-cancel">返回牌桌</button>
-    <div class="small">规则：无限注德州扑克，TDA 锦标赛规则（大盲前注、dead button、最小加注、不完整加注不重开加注权、边池、按钮左侧零头）。AI 翻牌前按近似 GTO 混合策略频率表行动，可为每个 AI 单独设定风格（游戏中点击 AI 头像也可改，下一手生效）。一手结束后或你出局观战时可查看所有人底牌；手牌进行中且你仍在局时不可查看。设置自动保存在本机。</div>
+    <div class="small">规则：无限注德州扑克，TDA 锦标赛规则（大盲前注、dead button、最小加注、不完整加注不重开加注权、边池、按钮左侧零头）。AI 翻牌前按近似 GTO 混合策略频率表行动，「难度」决定整桌松紧与对抗强度（默认困难），可为每个 AI 单独设定风格（游戏中点击 AI 头像也可改，下一手生效）。一手结束后或你出局观战时可查看所有人底牌；手牌进行中且你仍在局时不可查看。设置自动保存在本机。</div>
   </div>
 </div>
 
@@ -354,11 +369,20 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
 <div id="style-overlay" class="overlay hidden">
   <div class="panel">
     <h2>AI 玩家风格</h2>
-    <div class="row2"><button class="secondary" id="style-all-gto">一键全部 GTO</button><button class="secondary" id="style-all-random">一键随机</button></div>
+    <div class="row2"><button class="secondary" id="style-all-gto">一键全部 GTO</button><button class="secondary" id="style-all-random">一键随机</button><button class="secondary" id="style-all-diff">按难度重排</button></div>
     <label>名字旁显示风格标签 <input type="checkbox" id="style-showlabel"></label>
     <div id="style-list"></div><div id="style-hint"></div>
     <div class="small">GTO = 原样执行翻牌前近似 GTO 频率表（微调全为 0）。其他风格是四个参数的预设：入池松紧 / 激进度 / 诈唬频率 / 翻后跟注倾向，可逐人微调（标签后缀「微调」表示已改过参数）。游戏中修改于下一手生效。</div>
     <button class="secondary" id="style-close">关闭</button>
+  </div>
+</div>
+<div id="diff-overlay" class="overlay hidden">
+  <div class="panel">
+    <h2>AI 难度</h2>
+    <div id="diff-list"></div>
+    <label>切换难度时按难度重排全桌 AI 风格 <input type="checkbox" id="diff-restyle" checked></label>
+    <div class="small">难度影响所有 AI 的翻牌前松紧与 3-bet / 挤压 / 反抢频率，以及翻牌后的持续下注、多枪、过牌加注、半诈唬、下注尺寸多样性和针对你弃牌倾向的施压力度。风格（紧凶 / 松凶 …）决定每个 AI 的个性，难度决定整体强度与对抗性。游戏中修改于下一手生效。</div>
+    <button class="secondary" id="diff-close">关闭</button>
   </div>
 </div>
 <div id="rank-overlay" class="overlay hidden">
@@ -771,7 +795,7 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
       p.lastAction = (isBet ? '下注 ' : '加注到 ') + to + (p.allIn ? ' 全下' : '');
       this.say(`${p.name} ${isBet ? '下注' : '加注到'} ${to}` + (p.allIn ? '（全下）' : '') + (!full && !isBet ? '（不足最小加注，不重开加注权）' : ''));
     } else throw new Error('未知行动 ' + type);
-    this.actions.push({ street: this.street, seat, type: (type === 'call' && la.call <= 0) ? 'check' : type, to: type === 'raise' ? Math.floor(action.to) : undefined, allIn: p.allIn });
+    this.actions.push({ street: this.street, seat, type: (type === 'call' && la.call <= 0) ? 'check' : type, to: type === 'raise' ? Math.floor(action.to) : undefined, allIn: p.allIn, facing: la.call > 0, potBefore: la.pot, callAmt: la.call });
     this.emit('action', { seat, type, to: action.to });
     this.actor = this.nextToAct(seat);
     this.checkRoundEnd();
@@ -1079,6 +1103,25 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     if (h.key === 'AQo') return 0.25;
     return 0;
   }
+  // 二级 3bet 诈唬候选：当一级候选已打满（高难度 / 松凶风格）时溢出到这些牌（同花杂牌、同花小对、非同花高张）
+  function bluffWeight2(h, vsLate) {
+    if (bluffWeight(h, vsLate) > 0) return 0;
+    if (h.pair && h.hi <= 7) return 0.35;
+    if (h.suited && !h.pair && h.hi >= 8 && h.pct < 0.5) return 0.6;
+    if (!h.suited && !h.pair && h.hi === 14 && h.lo >= 5 && h.lo <= 8) return 0.3;
+    if (!h.suited && !h.pair && h.hi >= 11 && h.lo >= 10) return 0.4;
+    return 0;
+  }
+  function bluff4Weight2(h) {
+    if (bluff4Weight(h) > 0) return 0;
+    if (h.hi === 14 && h.suited && h.lo <= 9) return 0.5;
+    if (h.key === 'KJs' || h.key === 'QJs' || h.key === 'KQo' || h.key === 'KTs') return 0.3;
+    if (h.key === 'AJo' || h.key === 'ATo') return 0.3;
+    return 0;
+  }
+  // 难度系数（由 ai.js 传入 node.diff）：steal = 后位/盲注开池放宽，tb = 3bet 频率，sq = 挤压频率，b4 = 4bet 诈唬频率，resteal = 盲注反抢
+  const DIFF_DEFAULT = { open: 1, steal: 1, call: 1, tb: 1, sq: 1, b4: 1, resteal: 1 };
+  function diffOf(node) { return node.diff ? Object.assign({}, DIFF_DEFAULT, node.diff) : DIFF_DEFAULT; }
 
   // ---- 风格系数 ----
   const PRESETS = {
@@ -1159,17 +1202,23 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
 
   function rfi(h, node, S) {
     const { pos, eff, nPlayers } = node; const hu = nPlayers === 2;
+    const DF = diffOf(node);
     const r = { fold: 0, call: 0, raise: 0, allin: 0, size: openSize(node) };
     const posKey = hu ? 'HU' : pos;
+    const stealMul = (hu || pos === 'CO' || pos === 'BTN' || pos === 'SB') ? DF.steal : pos === 'HJ' ? 1 + 0.5 * (DF.steal - 1) : 1;
     if (eff <= 15) { // 纯 push/fold（Nash 近似）
-      const pp = pushPct(posKey, eff) * S.push;
+      const pp = pushPct(posKey, eff) * S.push * (1 + 0.5 * (stealMul - 1));
       r.allin = band(pushScore(h), pp, 0.03); r.size = 'allin';
       // 12~15BB 的 SB/HU 位置：少量 limp（陷阱 + 弱牌补盲）
       if ((pos === 'SB' || hu) && eff >= 12) { const lp = (1 - r.allin) * band(h.pct, 0.5, 0.05) * 0.25; r.call = lp; }
       return r;
     }
     const d = depthBucket(eff);
-    const thr = POS_RFI[posKey] * DM[d].open * S.open;
+    // 风格阈值照旧；难度（open/steal）在风格之上做加法式放宽，并按位置封顶（后位最多 ~75%，早位最多 ~34%），避免高难度退化成疯子
+    const thrStyle = POS_RFI[posKey] * DM[d].open * S.open;
+    const diffMul = Math.min(1.7, 1 + (DF.open - 1) + (stealMul - 1));
+    const cap = posKey === 'BTN' ? 0.74 : posKey === 'SB' ? 0.78 : posKey === 'HU' ? 0.9 : posKey === 'CO' ? 0.55 : posKey === 'HJ' ? 0.45 : 0.34;
+    const thr = Math.min(thrStyle * diffMul, Math.max(cap, thrStyle));
     let raise = band(openScore(h, eff), thr, 0.03);
     if (pos === 'SB' || hu) {
       // SB / HU 按钮：加注 + limp 混合（强牌少量陷阱 limp）
@@ -1185,13 +1234,14 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
 
   function vsLimp(h, node, S) {
     const { pos, eff, limpers, nPlayers } = node; const hu = nPlayers === 2;
+    const DF = diffOf(node);
     const r = { fold: 0, call: 0, raise: 0, allin: 0, size: 0 };
     const isBlind = pos === 'SB' || pos === 'BB';
     let thr;
     if (pos === 'BB') thr = Math.max(0.08, 0.2 - 0.05 * (limpers - 1));
     else if (pos === 'SB') thr = Math.max(0.07, 0.16 - 0.04 * (limpers - 1));
     else thr = (POS_RFI[hu ? 'HU' : pos] || 0.2) * 0.8 * Math.pow(0.85, limpers - 1);
-    thr *= S.open * (1 + 0.3 * S.A);
+    thr *= S.open * (1 + 0.3 * S.A) * (1 + 0.5 * (DF.steal - 1));
     let iso = band(openScore(h, eff), thr, 0.03);
     r.size = (isBlind ? 4 : 3) + limpers;
     if (eff <= 15) { r.allin = iso; r.size = 'allin'; iso = 0; }
@@ -1206,6 +1256,7 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
 
   function vsOpen(h, node, S) {
     const { pos, eff, oppPos, callers, nPlayers } = node; const hu = nPlayers === 2;
+    const DF = diffOf(node);
     const r = { fold: 0, call: 0, raise: 0, allin: 0, size: 0 };
     const R = (hu ? POS_RFI.HU : POS_RFI[oppPos]) || 0.25; // 开池者范围宽度
     const d = depthBucket(eff);
@@ -1220,12 +1271,17 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     // 开池尺寸：越大跟注越紧
     const sz = Math.pow(Math.min(1.1, Math.max(0.5, 2.5 / os)), 0.7); c *= sz; if (os <= 2.05) c *= 1.1;
     // 多人：冷跟收紧，挤压诈唬减少
-    if (callers > 0) { c *= Math.pow(0.85, callers); v *= 0.95; b *= 0.6; }
+    if (callers > 0) { c *= Math.pow(0.85, callers); v *= 0.95 * (1 + 0.2 * (DF.sq - 1)); b *= 0.6 * DF.sq; }
     // 深度
     c *= DM[d].call; v *= DM[d].tb; b *= d <= 25 ? 0.7 : d <= 40 ? 0.9 : 1;
     if (pos === 'BB' && d <= 20 && os <= 2.3) c = Math.max(c, 0.3 * S.call); // BB 面对小加注有赔率
     // 风格
-    v *= S.value; c *= S.call; b *= S.bluff;
+    const b0 = b; // 风格/难度前的基准诈唬量（溢出到二级候选只针对超出基准的部分，GTO 基准表不变）
+    v *= S.value; c *= S.call * DF.call; b *= S.bluff;
+    // 难度：3bet / 盲注反抢（resteal 只对盲注位面对后位开池生效，替代 tb）
+    const oop0 = pos === 'SB' || pos === 'BB';
+    const tbMul = (oop0 && vsLate) ? DF.resteal : DF.tb;
+    v *= 1 + 0.3 * (tbMul - 1); b = b0 * Math.max(0, Math.min(3, S.bluff + (tbMul - 1)));
     // 3bet 尺寸
     const oop = pos === 'SB' || pos === 'BB';
     let size = os * (oop ? 3.6 : 3) + (callers || 0) * os;
@@ -1236,7 +1292,11 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     let bluff = 0;
     if (b > 0 && value < 1) {
       const w = bluffWeight(h, vsLate);
-      if (w > 0) { bluff = Math.min(1 - value, 0.8, w * Math.min(1.2, b * 1326 / bluffMass(vsLate))); call = Math.min(call, 1 - value - bluff); if (call < 0.2 && bluff > 0.5 && (h.hi === 14 || h.suited)) { const c2 = Math.min(1 - value - bluff, 0.2); call = Math.max(call, c2); } }
+      const scale = b * 1326 / bluffMass(vsLate);
+      const cap0 = Math.max(1.2, b0 * 1326 / bluffMass(vsLate));
+      if (w > 0) bluff = Math.min(1 - value, 0.8, w * Math.min(1.2, scale));
+      else if (scale > cap0) { const w2 = bluffWeight2(h, vsLate); if (w2 > 0) bluff = Math.min(1 - value, 0.7, w2 * Math.min(1, (scale - cap0) * bluffMass(vsLate) / bluffMass2(vsLate))); }
+      if (bluff > 0) { call = Math.min(call, 1 - value - bluff); if (call < 0.2 && bluff > 0.5 && (h.hi === 14 || h.suited)) { const c2 = Math.min(1 - value - bluff, 0.2); call = Math.max(call, c2); } }
     }
     if (eff <= 20) { // 短码：3bet 基本即 reshove；小对子也可反推
       let re = 0.35 * R + 0.04; re *= eff <= 10 ? 1.3 : eff <= 15 ? 1 : 0.75; re *= Math.pow(0.8, node.behind || 0) * S.push;
@@ -1254,12 +1314,20 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     const k = vsLate ? 1 : 0; if (_bm[k]) return _bm[k];
     let W = 0; for (const key of ORDER) W += bluffWeight(FEAT[key], vsLate) * FEAT[key].combos; return _bm[k] = W;
   }
+  let _bm2 = {};
+  function bluffMass2(vsLate) {
+    const k = vsLate ? 1 : 0; if (_bm2[k]) return _bm2[k];
+    let W = 0; for (const key of ORDER) W += bluffWeight2(FEAT[key], vsLate) * FEAT[key].combos; return _bm2[k] = W;
+  }
   let _b4m = 0;
   function bluff4Mass() { if (_b4m) return _b4m; let W = 0; for (const key of ORDER) W += bluff4Weight(FEAT[key]) * FEAT[key].combos; return _b4m = W; }
+  let _b4m2 = 0;
+  function bluff4Mass2() { if (_b4m2) return _b4m2; let W = 0; for (const key of ORDER) W += bluff4Weight2(FEAT[key]) * FEAT[key].combos; return _b4m2 = W; }
 
   function vs3bet(h, node, S) {
     // 我们开池后面对 3bet
     const { pos, eff, oppPos, nPlayers } = node; const hu = nPlayers === 2;
+    const DF = diffOf(node);
     const r = { fold: 0, call: 0, raise: 0, allin: 0, size: 0 };
     const R = (hu ? POS_RFI.HU : POS_RFI[pos]) || 0.25; // 我方开池范围
     const ip = oppPos === 'SB' || oppPos === 'BB'; // 3bet 来自盲注 → 我方有位置
@@ -1270,13 +1338,20 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     const ratio = s3 / myOpen; if (ratio > 3.5) c *= Math.pow(3.5 / ratio, 0.8);
     if (node.callers > 0) { c *= 0.7; b *= 0.5; }
     if (d <= 40) c *= 0.8; if (d <= 25) { c *= 0.5; v *= 1.3; }
+    const b0 = b;
     v *= S.value; c *= S.call; b *= S.bluff;
+    b *= DF.b4; v *= 1 + 0.15 * (DF.b4 - 1);
     const size4 = s3 * 2.3;
     const jam = size4 >= eff * 0.4 || eff <= 30;
     const value = band(h.pct, v, 0.015);
     let call = (1 - value) * band(callScore(h), v + c, 0.03);
     let bluff = 0;
-    if (b > 0 && value < 1) { const w = bluff4Weight(h); if (w > 0) { bluff = Math.min(1 - value, w * Math.min(1, b * 1326 / bluff4Mass())); call = Math.min(call, 1 - value - bluff); } }
+    if (b > 0 && value < 1) {
+      const w = bluff4Weight(h); const scale = b * 1326 / bluff4Mass(); const cap0 = Math.max(1, b0 * 1326 / bluff4Mass());
+      if (w > 0) bluff = Math.min(1 - value, w * Math.min(1, scale));
+      else if (scale > cap0) { const w2 = bluff4Weight2(h); if (w2 > 0) bluff = Math.min(1 - value, 0.6, w2 * Math.min(1, (scale - cap0) * bluff4Mass() / bluff4Mass2())); }
+      if (bluff > 0) call = Math.min(call, 1 - value - bluff);
+    }
     if (jam) { r.allin = value + bluff; r.size = 'allin'; } else { r.raise = value + bluff; r.size = size4; }
     r.call = call;
     return r;
@@ -1329,13 +1404,14 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
   }
   function posByDist(dist) { return BY_DIST[Math.min(dist, BY_DIST.length - 1)]; }
 
-  const api = { ORDER, RANK169, FEAT, POS, POS_RFI, DEPTHS, PUSH, PUSH_D, pushPct, depthBucket, strategy, table, summarize, pick, PRESETS, PARAM_KEYS, styleMul, posByDist, band, feat };
+  const api = { ORDER, RANK169, FEAT, POS, POS_RFI, DEPTHS, PUSH, PUSH_D, pushPct, depthBucket, strategy, table, summarize, pick, PRESETS, PARAM_KEYS, styleMul, posByDist, band, feat, DIFF_DEFAULT, bluffWeight, bluffWeight2 };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else window.HoldemGTO = api;
 })();
 
 /* ---- ai.js ---- */
-/* ai.js — AI：翻牌前走近似 GTO 混合策略频率表（preflop_gto.js）+ 风格偏移；翻牌后蒙特卡洛胜率 + 赔率决策 */
+/* ai.js — AI：翻牌前走近似 GTO 混合策略频率表（preflop_gto.js）+ 风格偏移 + 难度系数；
+ * 翻牌后蒙特卡洛胜率 + 牌面结构 + 行动线（c-bet / 二三枪 / 过牌加注 / 半诈唬 / 吓人牌面施压）+ 简单对手建模（针对真人的弃牌倾向）。 */
 (function () {
   const isNode = (typeof module !== 'undefined' && module.exports);
   const C = isNode ? require('./cards') : window.HoldemCards;
@@ -1352,6 +1428,41 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
   const STYLE_ORDER = ['GTO', 'TAG', 'LAG', 'ROCK', 'STATION', 'MANIAC', 'RANDOM'];
   const PARAM_KEYS = G.PARAM_KEYS;
   const PARAM_NAMES = { loose: '入池松紧', aggr: '激进度', bluff: '诈唬频率', callDown: '翻后跟注倾向' };
+
+  // ---- 难度 ----
+  // 翻前：open/steal/call/tb/sq/b4/resteal 直接乘进频率表阈值（见 preflop_gto.js diffOf）
+  // 翻后：cbet 持续下注、barrel 二三枪、xr 过牌加注、semi 半诈唬、scare 吓人牌面施压、exploit 对手建模强度、sizeVar 尺寸多样化、
+  //       callDown 跟注倾向、valueThin 薄价值、traps 慢打/陷阱频率
+  const DIFFICULTY = {
+    EASY: { name: '休闲', desc: '偏紧偏被动，很少诈唬，适合熟悉规则',
+      pre: { open: 0.9, steal: 0.85, call: 1.0, tb: 0.7, sq: 0.6, b4: 0.5, resteal: 0.7 },
+      post: { cbet: 0.8, barrel: 0.5, xr: 0.4, semi: 0.6, scare: 0.3, exploit: 0, sizeVar: 0.4, callDown: 1.1, valueThin: 0.8, traps: 0.6, bluffRiver: 0.5 },
+      seatMix: ['GTO', 'TAG', 'ROCK', 'STATION', 'GTO', 'ROCK', 'TAG', 'STATION'] },
+    NORMAL: { name: '标准', desc: '按近似 GTO 频率表打，桌上风格混合',
+      pre: { open: 1, steal: 1, call: 1, tb: 1, sq: 1, b4: 1, resteal: 1 },
+      post: { cbet: 1, barrel: 1, xr: 1, semi: 1, scare: 1, exploit: 0.5, sizeVar: 1, callDown: 1, valueThin: 1, traps: 1, bluffRiver: 1 },
+      seatMix: ['GTO', 'TAG', 'LAG', 'GTO', 'STATION', 'TAG', 'ROCK', 'LAG'] },
+    HARD: { name: '困难', desc: '更松更凶：多 3-bet / 挤压 / 反抢，翻后多枪、过牌加注，针对你的弃牌倾向施压',
+      pre: { open: 1.12, steal: 1.3, call: 1.12, tb: 1.6, sq: 1.8, b4: 1.7, resteal: 1.9 },
+      post: { cbet: 1.25, barrel: 1.9, xr: 2.0, semi: 1.6, scare: 1.9, exploit: 1, sizeVar: 1.6, callDown: 1.0, valueThin: 1.25, traps: 1.2, bluffRiver: 1.7 },
+      seatMix: ['LAG', 'TAG', 'LAG', 'GTO', 'TAG', 'LAG', 'STATION', 'TAG'] },
+    HELL: { name: '地狱', desc: '全桌强手：极凶但有逻辑，诈唬挑能代表强牌的牌面，尺寸从小注到超池到全下',
+      pre: { open: 1.2, steal: 1.45, call: 1.18, tb: 1.9, sq: 2.2, b4: 2.1, resteal: 2.3 },
+      post: { cbet: 1.4, barrel: 2.3, xr: 2.5, semi: 1.9, scare: 2.4, exploit: 1.4, sizeVar: 2.0, callDown: 1.0, valueThin: 1.4, traps: 1.4, bluffRiver: 2.1 },
+      seatMix: ['LAG', 'TAG', 'LAG', 'LAG', 'TAG', 'GTO', 'LAG', 'TAG'] }
+  };
+  const DIFFICULTY_ORDER = ['EASY', 'NORMAL', 'HARD', 'HELL'];
+  const DEFAULT_DIFFICULTY = 'HARD';
+  function resolveDifficulty(d) { return DIFFICULTY[d] || DIFFICULTY[DEFAULT_DIFFICULTY]; }
+  // 按难度给一桌 AI 分配风格（保证混合）：返回 {seat: preset}；rng 用于微调参数抖动
+  function seatStylesFor(diffKey, seats, rng) {
+    rng = rng || Math.random;
+    const D = resolveDifficulty(diffKey); const mix = D.seatMix.slice();
+    // 打乱一次保证每局不同，但保留组成
+    for (let i = mix.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); const t = mix[i]; mix[i] = mix[j]; mix[j] = t; }
+    const out = {}; seats.forEach((s, i) => { const preset = mix[i % mix.length]; const base = PRESETS[preset]; const c = { preset }; for (const k of PARAM_KEYS) c[k] = base[k] || 0; out[s] = c; }); // 参数取预设原值（不抖动），避免座位标签全部显示「微调」
+    return out;
+  }
 
   // 把风格配置（{preset, loose, aggr, bluff, callDown}）规范化为参数对象
   function resolveStyle(cfg, rng) {
@@ -1415,32 +1526,130 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     const all = hole.concat(board);
     const sc = [0, 0, 0, 0]; for (const c of all) sc[C.suitOf(c)]++;
     const holeSuits = hole.map(C.suitOf);
-    let flushDraw = false;
+    let flushDraw = false, bdFlushDraw = false;
     for (let s = 0; s < 4; s++) if (sc[s] === 4 && holeSuits.includes(s)) flushDraw = true;
+    for (let s = 0; s < 4; s++) if (sc[s] === 4 && !holeSuits.includes(s)) bdFlushDraw = true; // 桌面 4 张同花（自己没有）
     let mask = 0; for (const c of all) mask |= 1 << C.rankOf(c);
     const cur = C.straightHigh(mask);
     let straightOuts = 0;
     if (cur < 0) for (let r = 0; r < 13; r++) { if (mask & (1 << r)) continue; if (C.straightHigh(mask | (1 << r)) >= 0) straightOuts += 4; }
-    return { flushDraw, oesd: straightOuts >= 8, gutshot: straightOuts === 4, outs: (flushDraw ? 9 : 0) + (straightOuts >= 8 ? 6 : straightOuts === 4 ? 3 : 0) };
+    // 顶级听牌：同花听 + 顺子听 / 顶对+听牌 之类由 postflop 综合判断
+    const overcards = board.length ? hole.filter(c => C.rankOf(c) > Math.max(...board.map(C.rankOf))).length : 0;
+    return { flushDraw, bdFlushDraw, oesd: straightOuts >= 8, gutshot: straightOuts === 4, overcards, outs: (flushDraw ? 9 : 0) + (straightOuts >= 8 ? 6 : straightOuts === 4 ? 3 : 0) };
   }
 
-  // ---- AI 实例：style 可在任意时刻 setStyle，下一手生效 ----
-  function makeAI(seat, styleCfg, rng) {
+  // ---- 牌面结构：干燥 / 湿润、是否出现吓人牌（A/K 高张、同花三张、顺子四连、公对）----
+  function boardInfo(board) {
+    const ranks = board.map(C.rankOf).sort((a, b) => b - a);
+    const sc = [0, 0, 0, 0]; for (const c of board) sc[C.suitOf(c)]++;
+    const maxSuit = Math.max(...sc);
+    const rc = {}; for (const r of ranks) rc[r] = (rc[r] || 0) + 1;
+    const paired = Object.values(rc).some(v => v >= 2);
+    const trips = Object.values(rc).some(v => v >= 3);
+    const uniq = [...new Set(ranks)];
+    let connected = 0; for (let i = 0; i < uniq.length - 1; i++) if (uniq[i] - uniq[i + 1] <= 2) connected++;
+    const hi = ranks[0];
+    const aceHigh = hi === 12, kingHigh = hi === 11;
+    const broadways = ranks.filter(r => r >= 8).length;
+    const low = hi <= 7; // 9 高以下
+    // 湿度 0~1
+    let wet = 0; if (maxSuit >= 3) wet += 0.45; else if (maxSuit === 2 && board.length === 3) wet += 0.2; if (connected >= 2) wet += 0.3; else if (connected === 1) wet += 0.15; if (paired) wet -= 0.1;
+    wet = Math.max(0, Math.min(1, wet));
+    // 吓人程度（给翻前跟注者 / 范围窄的人看）：A 高干燥面、K 高面、同花三张、四连张、转/河来 A/K 或完成同花顺子
+    const lastCard = board[board.length - 1];
+    const lastRank = C.rankOf(lastCard);
+    const cameOver = board.length >= 4 && lastRank >= 11 && lastRank > Math.max(...board.slice(0, -1).map(C.rankOf)); // 转/河来 A/K 且是新最高张
+    const flushComplete = maxSuit >= 3;
+    const flushCompletedNow = board.length >= 4 && maxSuit >= 3 && sc[C.suitOf(lastCard)] >= 3;
+    let straightPossible = false; { let m = 0; for (const r of ranks) m |= 1 << r; let cnt = 0; for (let r = 0; r < 13; r++) if (m & (1 << r)) cnt++; for (let r = 0; r < 13; r++) for (let r2 = r + 1; r2 < 13; r2++) if (C.straightHigh(m | (1 << r) | (1 << r2)) >= 0) straightPossible = true; }
+    let scare = 0;
+    if (aceHigh) scare += 0.35; else if (kingHigh) scare += 0.22;
+    if (cameOver) scare += 0.3;
+    if (flushCompletedNow) scare += 0.35; else if (flushComplete) scare += 0.15;
+    if (paired && hi >= 9 && !trips) scare += 0.1;
+    if (straightPossible && board.length >= 4 && connected >= 2) scare += 0.15;
+    scare = Math.min(1, scare);
+    return { ranks, hi, aceHigh, kingHigh, paired, trips, maxSuit, connected, broadways, low, wet, dry: wet < 0.25, scare, cameOver, flushComplete, flushCompletedNow, straightPossible };
+  }
+
+  // 我的牌与牌面的关系：顶对、超对、中对、听牌、坚果级
+  function handClass(hole, board) {
+    const cat = C.category(C.evaluate(hole.concat(board)));
+    const br = board.map(C.rankOf); const hr = hole.map(C.rankOf);
+    const top = Math.max(...br);
+    const pocket = hr[0] === hr[1];
+    const overpair = pocket && hr[0] > top;
+    const topPair = !pocket && (hr[0] === top || hr[1] === top) && cat === 1;
+    const midPair = cat === 1 && !topPair && !overpair && (br.includes(hr[0]) || br.includes(hr[1]));
+    const underpair = pocket && cat === 1 && hr[0] < top;
+    const kicker = topPair ? (hr[0] === top ? hr[1] : hr[0]) : -1;
+    return { cat, overpair, topPair, midPair, underpair, kicker, topPairGood: topPair && kicker >= 9, monster: cat >= 3, twoPairPlus: cat >= 2 };
+  }
+
+  // ---- 对手建模（只针对真人座位）：翻后面对下注的弃牌率 / 跟注率 / 加注率、翻前面对 3bet 弃牌率、showdown 倾向 ----
+  function makeModel() {
+    return { postFace: 0, postFold: 0, postCall: 0, postRaise: 0, preFace3: 0, preFold3: 0, cbetFace: 0, cbetFold: 0, riverFace: 0, riverFold: 0, hands: 0, vpipHands: 0,
+      // 带先验的估计（样本少时回归到 0.42 / 0.5）
+      foldToBet() { return (this.postFold + 0.42 * 8) / (this.postFace + 8); },
+      foldToCbet() { return (this.cbetFold + 0.45 * 6) / (this.cbetFace + 6); },
+      foldRiver() { return (this.riverFold + 0.45 * 5) / (this.riverFace + 5); },
+      foldTo3bet() { return (this.preFold3 + 0.55 * 6) / (this.preFace3 + 6); },
+      raiseRate() { return (this.postRaise + 0.1 * 8) / (this.postFace + 8); },
+      vpip() { return (this.vpipHands + 0.25 * 10) / (this.hands + 10); } };
+  }
+  // 从 game.actions 增量更新模型：每次 decide 时把尚未处理的行动喂进去
+  function updateModel(model, game, targetSeat, state) {
+    if (state.handNo !== game.handNo) {
+      // 先把上一手在我最后一次决策之后发生的行动（通常是真人对我河牌下注的弃牌/跟注）补进模型
+      if (state.handNo >= 0 && game.history && game.history.length) { const prev = game.history[game.history.length - 1]; if (prev && prev.handNo === state.handNo) feedActions(model, prev.actions, targetSeat, state); }
+      state.handNo = game.handNo; state.idx = 0; state.vp = false; model.hands++;
+    }
+    feedActions(model, game.actions, targetSeat, state);
+  }
+  function feedActions(model, acts, targetSeat, state) {
+    for (; state.idx < acts.length; state.idx++) {
+      const a = acts[state.idx];
+      if (a.seat !== targetSeat) continue;
+      if (a.street === 'preflop') {
+        if (a.type === 'call' || a.type === 'raise') { if (!state.vp) { state.vp = true; model.vpipHands++; } }
+        // 面对 3bet（自己之前加注过，再面对加注）
+        const before = acts.slice(0, state.idx).filter(x => x.street === 'preflop');
+        const myR = before.filter(x => x.seat === targetSeat && x.type === 'raise').length;
+        const nR = before.filter(x => x.type === 'raise').length;
+        if (myR >= 1 && nR >= 2 && a.facing) { model.preFace3++; if (a.type === 'fold') model.preFold3++; }
+      } else if (a.facing) {
+        model.postFace++;
+        if (a.type === 'fold') model.postFold++; else if (a.type === 'call') model.postCall++; else if (a.type === 'raise') model.postRaise++;
+        if (a.street === 'flop') { model.cbetFace++; if (a.type === 'fold') model.cbetFold++; }
+        if (a.street === 'river') { model.riverFace++; if (a.type === 'fold') model.riverFold++; }
+      }
+    }
+  }
+
+  // ---- AI 实例：style 可在任意时刻 setStyle，下一手生效；difficulty 可随时 setDifficulty，下一手生效 ----
+  function makeAI(seat, styleCfg, rng, difficulty) {
     rng = rng || Math.random;
-    const ai = { seat, pending: null, st: resolveStyle(styleCfg, rng), lastHand: -1 };
+    const ai = { seat, pending: null, st: resolveStyle(styleCfg, rng), lastHand: -1, diffKey: DIFFICULTY[difficulty] ? difficulty : (difficulty === undefined ? 'NORMAL' : DEFAULT_DIFFICULTY), pendingDiff: null, model: makeModel(), modelState: { handNo: -1, idx: 0, vp: false }, memo: { handNo: -1, street: null, eq: null } };
     ai.style = ai.st.preset; ai.styleName = ai.st.name;
     ai.setStyle = (cfg) => { ai.pending = cfg; };
     ai.getStyle = () => ai.st;
+    ai.setDifficulty = (d) => { if (DIFFICULTY[d]) ai.pendingDiff = d; };
+    ai.getDifficulty = () => ai.diffKey;
     ai.decide = (game) => {
-      if (ai.pending && game.handNo !== ai.lastHand) { ai.st = resolveStyle(ai.pending, rng); ai.pending = null; ai.style = ai.st.preset; ai.styleName = ai.st.name; }
+      if (game.handNo !== ai.lastHand) {
+        if (ai.pending) { ai.st = resolveStyle(ai.pending, rng); ai.pending = null; ai.style = ai.st.preset; ai.styleName = ai.st.name; }
+        if (ai.pendingDiff) { ai.diffKey = ai.pendingDiff; ai.pendingDiff = null; }
+      }
       ai.lastHand = game.handNo;
-      return decide(game, seat, ai.st, rng);
+      const hs = game.players.findIndex(p => p.isHuman);
+      if (hs >= 0) updateModel(ai.model, game, hs, ai.modelState);
+      return decide(game, seat, ai.st, rng, resolveDifficulty(ai.diffKey), hs >= 0 ? ai.model : null, hs, ai.memo);
     };
-    ai.applyPending = () => { if (ai.pending) { ai.st = resolveStyle(ai.pending, rng); ai.pending = null; ai.style = ai.st.preset; ai.styleName = ai.st.name; } };
+    ai.applyPending = () => { if (ai.pending) { ai.st = resolveStyle(ai.pending, rng); ai.pending = null; ai.style = ai.st.preset; ai.styleName = ai.st.name; } if (ai.pendingDiff) { ai.diffKey = ai.pendingDiff; ai.pendingDiff = null; } };
     return ai;
   }
 
-  function decide(game, seat, st, rng) {
+  function decide(game, seat, st, rng, D, model, humanSeat, memo) {
     const la = game.legalActions();
     const p = game.players[seat];
     const bb = game.bb;
@@ -1457,9 +1666,9 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
       const avg = game.players.filter(q => !q.out).reduce((s, q) => s + q.chips, 0) / act;
       if (p.chips < avg * 0.4) icm = Math.min(1.1, icm + 0.25);
     }
-    if (game.street === 'preflop') return preflop(game, p, la, st, rng, icm);
+    if (game.street === 'preflop') return preflop(game, p, la, st, rng, icm, D, model, humanSeat);
     const betPot = (frac) => clampRaise(la, Math.round((pot * frac + toCall) / (bb / 2)) * (bb / 2) + la.myBet);
-    return postflop(game, p, la, st, rng, icm, nOpp, betPot);
+    return postflop(game, p, la, st, rng, icm, nOpp, betPot, D, model, humanSeat, memo);
   }
 
   function clampRaise(la, to) {
@@ -1503,6 +1712,7 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
       return node;
     }
     node.oppPos = gtoPos(game, lastRaiser.seat);
+    node.oppSeat = lastRaiser.seat;
     if (facingAllIn || committing) {
       node.kind = 'vs_shove';
       node.potOdds = la.call / (la.pot + la.call);
@@ -1520,10 +1730,15 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     return Math.min(p.chips + p.bet, m || (p.chips + p.bet)) / game.bb;
   }
 
-  function preflop(game, p, la, st, rng, icm) {
+  function preflop(game, p, la, st, rng, icm, D, model, humanSeat) {
     const bb = game.bb;
     const node = preflopNode(game, p, la);
     node.style = st;
+    node.diff = Object.assign({}, D.pre);
+    // 对手建模：开池者是真人且他面对 3bet 弃得多 → 多 3bet；真人很少弃 → 少诈唬 3bet
+    if (model && D.post.exploit > 0 && node.kind === 'vs_open' && node.oppSeat === humanSeat && node.eff > 20) {
+      const f3 = model.foldTo3bet(); const k = 1 + (f3 - 0.55) * 1.6 * D.post.exploit; node.diff.tb *= Math.max(0.6, k); node.diff.resteal *= Math.max(0.6, k);
+    }
     const key = C.holeKey(p.hole[0], p.hole[1]);
     let r;
     if (node.kind === 'vs_open_sq') {
@@ -1542,66 +1757,226 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     // raise：sizeBB → 筹码
     if (!la.canRaise) return la.call > 0 ? { type: 'call' } : { type: 'check' };
     let to = Math.round(a.sizeBB * bb / (bb / 2)) * (bb / 2);
-    // 相对尺寸微抖动 ±5%
-    to = Math.round(to * (0.95 + rng() * 0.1) / (bb / 2)) * (bb / 2);
+    // 相对尺寸微抖动 ±5%；高难度 3bet 尺寸更多样（有时小 3bet、有时大）
+    let jit = 0.95 + rng() * 0.1;
+    if (node.kind === 'vs_open' && D.post.sizeVar > 1.2 && rng() < 0.3) jit *= rng() < 0.5 ? 0.82 : 1.25;
+    to = Math.round(to * jit / (bb / 2)) * (bb / 2);
     return { type: 'raise', to: clampRaise(la, to) };
   }
 
   function countRaises(game) { return game.actions.filter(a => a.street === 'preflop' && a.type === 'raise').length; }
 
-  function postflop(game, p, la, st, rng, icm, nOpp, betPot) {
+  // 本街之前（翻牌/转牌）我是否是进攻者、以及本手我在哪些街下过注（用于二枪三枪）
+  function myLine(game, seat) {
+    const acts = game.actions;
+    const bets = { flop: false, turn: false, river: false };
+    let preAgg = false; let lastPreRaiser = null;
+    for (const a of acts) { if (a.street === 'preflop') { if (a.type === 'raise') lastPreRaiser = a.seat; } else if (a.type === 'raise' && a.seat === seat) bets[a.street] = true; }
+    preAgg = lastPreRaiser === seat;
+    // 本街是否已有人下注（面对下注时）、本街我是否已行动过（过牌加注场景）
+    const cur = acts.filter(a => a.street === game.street);
+    const iChecked = cur.some(a => a.seat === seat && a.type === 'check');
+    const streetBets = cur.filter(a => a.type === 'raise').length;
+    return { preAgg, bets, iChecked, streetBets };
+  }
+
+  // 对手范围宽度估计（对 equity 的 oppPct）：翻前加注者 ~30%，跟注者 ~45%，无人加注 ~55%；高难度对真人用其 VPIP
+  function oppRange(game, p, nOpp, model, humanSeat, D) {
+    let pct = countRaises(game) > 0 ? 0.3 : 0.55;
+    if (countRaises(game) > 0 && game.lastAggressor !== null && game.lastAggressor !== undefined) { const agg = game.lastAggressor; const aggIn = !game.players[agg].folded; if (!aggIn) pct = 0.45; }
+    if (model && D.post.exploit > 0 && nOpp === 1) { const opp = game.inHand().find(q => q.seat !== p.seat); if (opp && opp.seat === humanSeat) { const v = model.vpip(); pct = Math.max(0.15, Math.min(0.7, countRaises(game) > 0 ? Math.min(pct, v * 0.85) : v)); } }
+    return pct;
+  }
+
+  function postflop(game, p, la, st, rng, icm, nOpp, betPot, D, model, humanSeat, memo) {
     const M = postMul(st);
+    const P = D.post;
     const noise = () => 0.88 + rng() * 0.24;
     const pot = la.pot; const toCall = la.call; const bb = game.bb;
     const board = game.board;
     const iters = nOpp > 2 ? 160 : 220;
-    const oppPct = countRaises(game) > 0 ? 0.3 : 0.55;
-    const eq = equity(p.hole, board, Math.min(nOpp, 3), iters, rng, oppPct);
+    const oppPct = oppRange(game, p, nOpp, model, humanSeat, D);
+    // 同一街同一手只算一次胜率（过牌后面对下注时复用）
+    let eq;
+    if (memo && memo.handNo === game.handNo && memo.street === game.street && memo.eq != null && memo.nOpp === nOpp) eq = memo.eq;
+    else { eq = equity(p.hole, board, Math.min(nOpp, 3), iters, rng, oppPct); if (memo) { memo.handNo = game.handNo; memo.street = game.street; memo.eq = eq; memo.nOpp = nOpp; } }
     const di = drawInfo(p.hole, board);
-    const wasPreAgg = game.lastAggressor === p.seat && game.street === 'flop';
+    const bi = boardInfo(board);
+    const hc = handClass(p.hole, board);
+    const line = myLine(game, p.seat);
+    const wasPreAgg = line.preAgg;
     const streetsLeft = game.street === 'flop' ? 2 : game.street === 'turn' ? 1 : 0;
     const n = noise();
     const need = 1 / (nOpp + 1);
     const strong = eq > need + 0.25 * n;
     const medium = eq > need + 0.08;
+    const nutty = eq > 0.8 || hc.monster;
     const drawEq = streetsLeft > 0 && di.outs > 0 ? di.outs * (streetsLeft === 2 ? 0.04 : 0.02) : 0;
+    const bigDraw = streetsLeft > 0 && (di.outs >= 12 || (di.outs >= 8 && di.overcards >= 1) || (di.flushDraw && (hc.cat >= 1 || di.gutshot)));
+    const spr = p.chips / Math.max(pot, 1); // 筹码底池比
+    const hu = nOpp === 1;
+    // 对手是真人时的建模系数
+    const opp = hu ? game.inHand().find(q => q.seat !== p.seat) : null;
+    const vsHuman = !!(model && opp && opp.seat === humanSeat && P.exploit > 0);
+    let foldy = 1, sticky = 1; // foldy>1：对手爱弃牌 → 多诈唬；sticky>1：对手爱跟 → 少诈唬多价值
+    if (vsHuman) {
+      const f = game.street === 'flop' ? model.foldToCbet() : game.street === 'river' ? model.foldRiver() : model.foldToBet();
+      const dev = (f - 0.45) * 2; // -0.9 ~ 1.1
+      foldy = Math.max(0.5, Math.min(1.9, 1 + dev * 1.1 * P.exploit));
+      sticky = Math.max(0.6, Math.min(1.6, 1 - dev * 0.8 * P.exploit));
+    }
+    const multi = hu ? 1 : nOpp === 2 ? 0.55 : 0.35; // 多人底池诈唬折扣
+
+    // ---- 尺寸选择：按目的（价值 / 诈唬 / 保护）与牌面挑尺寸，高难度更多样（小注 / 超池 / 全下）----
+    const pickSize = (purpose) => {
+      let frac;
+      const v = P.sizeVar;
+      if (purpose === 'value') {
+        if (bi.wet > 0.5) frac = 0.7 + rng() * 0.35; else frac = 0.5 + rng() * 0.3;
+        if (game.street === 'river') frac = nutty ? (rng() < 0.3 * v ? 1.3 + rng() * 0.5 : 0.65 + rng() * 0.45) : 0.5 + rng() * 0.35;
+        if (vsHuman && sticky > 1.15) frac *= 1.15; // 跟注站：加大价值尺寸
+      } else if (purpose === 'cbet') {
+        // 干燥面小注高频，湿润面大注
+        frac = bi.dry ? 0.28 + rng() * 0.12 : 0.5 + rng() * 0.25;
+        if (bi.aceHigh && bi.dry) frac = 0.25 + rng() * 0.1;
+      } else if (purpose === 'bluff') {
+        frac = bi.scare > 0.5 ? 0.6 + rng() * 0.4 : 0.45 + rng() * 0.3;
+        if (game.street === 'river' && rng() < 0.3 * v) frac = 1.1 + rng() * 0.5; // 河牌超池诈唬
+        if (vsHuman && foldy > 1.3 && rng() < 0.5) frac = Math.min(frac, 0.45 + rng() * 0.15); // 爱弃牌的对手用小注就够
+      } else if (purpose === 'semi') {
+        frac = 0.55 + rng() * 0.35;
+      } else if (purpose === 'protect') {
+        frac = 0.6 + rng() * 0.3;
+      } else frac = 0.5;
+      // 尺寸多样化：偶尔极小 / 偶尔超池
+      if (v > 1.2 && rng() < 0.12 * (v - 1)) frac = rng() < 0.5 ? 0.22 + rng() * 0.1 : 1.2 + rng() * 0.4;
+      frac *= 0.9 + 0.1 * M.agg;
+      return frac;
+    };
+    const betOrAllin = (frac, allowJam) => {
+      if (!la.canRaise) return la.call > 0 ? { type: 'call' } : { type: 'check' };
+      const to = betPot(frac);
+      // 剩余筹码不多（下注后 SPR 很低）直接全下：施压 + 不留尾巴
+      if (allowJam && (to - la.myBet) >= p.chips * 0.6) return { type: 'allin' };
+      return { type: 'raise', to };
+    };
 
     if (toCall === 0) {
-      let betChance = 0;
-      if (strong) betChance = 0.85 * M.agg * (1 - M.trap);
-      else if (medium) betChance = 0.5 * M.agg;
-      else if (wasPreAgg) betChance = M.cbet * (nOpp === 1 ? 1 : 0.6);
-      else if (di.outs >= 8) betChance = 0.55 * M.agg;
-      else betChance = M.bluff * 0.5 * (nOpp === 1 ? 1 : 0.4);
-      if (game.street === 'river' && !strong && !medium) betChance = M.bluff * 0.35 * (nOpp === 1 ? 1 : 0.3);
-      if (p.chips <= pot * 0.5 && medium) betChance = 1;
+      // ====== 无人下注：决定下注 / 过牌（含慢打与过牌加注布局）======
+      let betChance = 0; let purpose = 'value';
+      const ip = isInPosition(game, p.seat);
+      if (nutty) {
+        // 坚果级：大部分下注，少量慢打（有位置且牌面干燥、对手爱打时过牌诱导）
+        betChance = 0.85 * M.agg;
+        const trapChance = M.trap * P.traps + (vsHuman && model.raiseRate() > 0.15 ? 0.15 : 0) + (bi.dry && streetsLeft > 0 ? 0.1 : 0);
+        if (!ip && streetsLeft > 0 && rng() < trapChance * 1.5) betChance = 0; // 无位置过牌准备加注
+        else if (rng() < trapChance) betChance = 0;
+        purpose = 'value';
+      } else if (strong) { betChance = 0.8 * M.agg * (1 - M.trap * 0.5); purpose = 'value'; }
+      else if (medium) {
+        // 中等牌：薄价值 / 保护，面对爱跟的对手多打
+        betChance = (0.5 + 0.2 * (P.valueThin - 1)) * M.agg * (vsHuman ? Math.min(1.4, sticky) : 1);
+        if (bi.wet > 0.4 && streetsLeft > 0) betChance += 0.15; // 湿润面保护
+        if (!hu) betChance *= 0.8;
+        purpose = hc.topPair || hc.overpair ? 'value' : 'protect';
+      }
+      if (betChance === 0 || (!strong && !medium && !nutty)) {
+        if (!nutty && !strong && !medium) {
+          // 弱牌 / 听牌：c-bet、二三枪、半诈唬、吓人牌面施压、纯诈唬
+          const isCbet = wasPreAgg && game.street === 'flop';
+          const barrel = wasPreAgg && ((game.street === 'turn' && line.bets.flop) || (game.street === 'river' && line.bets.turn));
+          if (bigDraw) { betChance = 0.6 * M.agg * P.semi * (hu ? 1 : 0.75); purpose = 'semi'; }
+          else if (di.outs >= 8 && streetsLeft > 0) { betChance = 0.45 * M.agg * P.semi * (hu ? 1 : 0.6); purpose = 'semi'; }
+          else if (isCbet) {
+            // 持续下注：干燥 / A 高面高频；多人降频；湿润低面降频；对手弃牌多加频
+            let c = M.cbet * P.cbet;
+            if (bi.dry || bi.aceHigh || bi.kingHigh) c *= 1.1; if (bi.low && bi.wet > 0.4) c *= 0.7; if (bi.paired) c *= 1.05;
+            c *= hu ? 1 : nOpp === 2 ? 0.6 : 0.4; c *= foldy;
+            betChance = Math.min(0.92, c); purpose = 'cbet';
+          } else if (barrel) {
+            // 二枪 / 三枪：挑吓人牌或自己有点后门/高张的时候；对手越爱弃越多开火
+            let b = 0.32 * M.agg * P.barrel * (hu ? 1 : 0.45);
+            b *= 0.6 + bi.scare * 1.0; if (di.overcards >= 1 || di.gutshot) b *= 1.25; if (game.street === 'river') b *= 0.85 * P.bluffRiver / Math.max(1, P.barrel * 0.8);
+            b *= foldy;
+            betChance = Math.min(0.9, b); purpose = 'bluff';
+          } else if (bi.scare > 0.45 && streetsLeft <= 1 && (ip || line.streetBets === 0)) {
+            // 吓人牌面主动打：对手未进攻、转/河来 A/K/完成同花 → 代表强牌
+            let s = 0.22 * P.scare * M.agg * (hu ? 1 : 0.4) * (0.5 + bi.scare) * foldy;
+            if (line.iChecked) s *= 0.6;
+            betChance = Math.min(0.7, s); purpose = 'bluff';
+          } else {
+            betChance = M.bluff * 0.4 * multi * (ip ? 1.2 : 0.8) * foldy * (game.street === 'river' ? P.bluffRiver * 0.8 : 1);
+            if (game.street === 'river' && line.streetBets === 0 && !wasPreAgg && line.bets.turn === false) betChance *= 0.7;
+            purpose = 'bluff';
+          }
+          // 对手是跟注站就别乱诈唬
+          if (vsHuman && sticky > 1.2 && purpose !== 'semi') betChance *= Math.max(0.35, 2 - sticky);
+          if (p.chips <= pot * 0.5 && medium) betChance = 1;
+        }
+      }
+      if (p.chips <= pot * 0.5 && (medium || strong)) betChance = 1;
       if (rng() < Math.min(1, betChance * icm)) {
-        let frac;
-        if (strong) frac = 0.55 + rng() * 0.25; else if (medium) frac = 0.4 + rng() * 0.2; else frac = 0.33 + rng() * 0.2;
-        if (board.length === 3 && !strong) frac = Math.min(frac, 0.45);
-        if (game.street === 'river' && strong) frac = 0.6 + rng() * 0.4;
-        frac *= 0.85 + 0.15 * M.agg;
-        if (p.chips <= pot * 1.2 && (strong || medium)) return { type: 'allin' };
-        return la.canRaise ? { type: 'raise', to: betPot(frac) } : { type: 'check' };
+        const frac = pickSize(purpose);
+        // 坚果 / 强牌低 SPR：直接全下
+        if ((nutty || strong) && spr <= 1.3) return { type: 'allin' };
+        // 半诈唬低 SPR 全下施压（有 fold equity + 听牌权益）
+        if (purpose === 'semi' && spr <= 1.6 && rng() < 0.6 * P.semi) return { type: 'allin' };
+        return betOrAllin(frac, purpose !== 'cbet');
       }
       return { type: 'check' };
     }
+
+    // ====== 面对下注：加注（价值 / 过牌加注 / 半诈唬加注 / 纯诈唬加注）、跟注、弃牌 ======
     const potOdds = toCall / (pot + toCall);
     const implied = streetsLeft > 0 ? potOdds * 0.75 : potOdds;
     const totalEq = Math.min(0.95, eq + drawEq * 0.5);
-    const raiseChance = strong ? 0.6 * M.agg : (di.outs >= 8 && streetsLeft > 0 ? 0.25 * M.agg : M.bluff * 0.12);
-    if (la.canRaise && rng() < raiseChance * icm && (strong || p.chips > toCall * 3)) {
-      if (la.maxRaiseTo <= la.currentBet * 3 || p.chips <= pot) return { type: 'allin' };
-      return { type: 'raise', to: Math.max(la.minRaiseTo, Math.min(la.maxRaiseTo, Math.round((la.currentBet * 2.8 + pot * 0.3) / bb) * bb)) };
+    const facingBig = toCall >= pot * 0.6;
+    const xrSpot = line.iChecked; // 本街我先过牌 → 现在加注就是过牌加注
+    let raiseChance = 0; let rPurpose = 'value';
+    if (nutty) raiseChance = 0.7 * M.agg * (xrSpot ? 1.1 : 1);
+    else if (strong) raiseChance = 0.45 * M.agg * (xrSpot ? P.xr * 0.8 : 1) * (facingBig ? 0.6 : 1);
+    else if (bigDraw && streetsLeft > 0) { raiseChance = 0.35 * M.agg * P.semi * (xrSpot ? P.xr * 0.7 : 1) * (hu ? 1 : 0.6); rPurpose = 'semi'; }
+    else if (di.outs >= 8 && streetsLeft > 0) { raiseChance = 0.18 * M.agg * P.semi * (hu ? 1 : 0.5); rPurpose = 'semi'; }
+    else {
+      // 纯诈唬加注 / 过牌加注诈唬：挑吓人牌面、对手小注、单挑、对手爱弃
+      let b = M.bluff * 0.12 * multi * foldy;
+      if (xrSpot) b *= P.xr * (bi.scare > 0.4 ? 1.4 : 1) * (toCall <= pot * 0.45 ? 1.3 : 0.7);
+      if (bi.scare > 0.5 && game.street !== 'flop') b *= 1.3 * P.scare;
+      if (game.street === 'river') b *= P.bluffRiver * 0.9;
+      raiseChance = Math.min(0.45, b); rPurpose = 'bluff';
     }
-    const callFactor = M.callDown * icm;
+    if (vsHuman && sticky > 1.2 && rPurpose !== 'value') raiseChance *= Math.max(0.3, 2 - sticky);
+    if (!hu && rPurpose === 'bluff') raiseChance *= 0.5;
+    if (la.canRaise && rng() < raiseChance * icm && (nutty || strong || p.chips > toCall * 2.5)) {
+      // 尺寸：价值 2.5–3.5x，诈唬偏大（3–4x）或直接全下（低 SPR）
+      const mult = rPurpose === 'value' ? (2.5 + rng() * 1.0) : rPurpose === 'semi' ? (2.6 + rng() * 1.2) : (2.8 + rng() * 1.4);
+      let to = Math.round((la.currentBet * mult + pot * 0.25) / (bb / 2)) * (bb / 2);
+      if (P.sizeVar > 1.2 && rng() < 0.15 * (P.sizeVar - 1)) to = Math.round(to * 1.6 / (bb / 2)) * (bb / 2); // 偶尔超大加注
+      if (la.maxRaiseTo <= la.currentBet * 3 || (to - la.myBet) >= p.chips * 0.6 || (p.chips <= pot * 1.2 && (nutty || strong))) return { type: 'allin' };
+      if (rPurpose === 'semi' && spr <= 2.5 && rng() < 0.5 * P.semi) return { type: 'allin' };
+      return { type: 'raise', to: clampRaise(la, to) };
+    }
+    const callFactor = M.callDown * icm * P.callDown;
     if (totalEq * callFactor > implied + 0.02) return { type: 'call' };
     if (eq > potOdds + 0.05 && toCall >= p.chips) return { type: 'call' };
-    if (game.street === 'river' && potOdds < 0.3 && eq > 0.3 && rng() < 0.35 * M.callDown) return { type: 'call' };
+    // 浮跟（float）：有位置、单挑、翻牌对手小注、自己有高张/后门 → 跟一下准备转牌抢池（高难度）
+    if (game.street === 'flop' && hu && toCall <= pot * 0.4 && isInPosition(game, p.seat) && (di.overcards >= 1 || di.gutshot) && rng() < 0.25 * P.barrel * M.agg) return { type: 'call' };
+    // 河牌抓诈唬：有一定摊牌价值、赔率好；对手爱诈唬（加注率高）多抓
+    if (game.street === 'river' && potOdds < 0.3 && eq > 0.3 && rng() < 0.35 * M.callDown * (vsHuman ? Math.max(0.6, 1 + (model.raiseRate() - 0.1) * 2) : 1)) return { type: 'call' };
+    if (game.street === 'river' && hc.cat >= 1 && potOdds < 0.35 && eq > 0.25 && bi.scare < 0.3 && rng() < 0.2 * P.callDown) return { type: 'call' };
     return { type: 'fold' };
   }
 
-  const api = { makeAI, equity, drawInfo, hPct, hRank, STYLES, STYLE_ORDER, PRESETS, PARAM_KEYS, PARAM_NAMES, resolveStyle, styleLabel, postMul, RANK169, GTO: G, gtoPos, preflopNode };
+  // 翻后是否有位置（在局玩家中最后行动）
+  function isInPosition(game, seat) {
+    const n = game.players.length;
+    let s = game.btnSeat; let last = null;
+    for (let i = 1; i <= n; i++) { const q = game.players[(s + i) % n]; if (!q.folded && !q.out) last = q.seat; }
+    // 按钮左手第一位先行动 → 顺时针最后一个在局者（即按钮或最靠近按钮的）最后行动
+    return last === seat;
+  }
+
+  const api = { makeAI, equity, drawInfo, boardInfo, handClass, hPct, hRank, STYLES, STYLE_ORDER, PRESETS, PARAM_KEYS, PARAM_NAMES, resolveStyle, styleLabel, postMul, RANK169, GTO: G, gtoPos, preflopNode, DIFFICULTY, DIFFICULTY_ORDER, DEFAULT_DIFFICULTY, resolveDifficulty, seatStylesFor, makeModel, isInPosition };
   if (isNode) module.exports = api;
   else window.HoldemAI = api;
 })();
@@ -1612,7 +1987,7 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
   const C = window.HoldemCards, E = window.HoldemEngine, AI = window.HoldemAI;
   const $ = id => document.getElementById(id);
   const AI_NAMES = ['老张', '阿明', '小李', '大伟', '琳达', '阿强', '老王', '小美', '阿杰', '胖子', '阿凯', '老陈'];
-  const DEFAULTS = { mode: 'sng', players: 6, startChips: 10000, handsPerLevel: 10, cashSB: 50, cashBB: 100, speed: 1, helper: false, name: '我', showStyle: true, aiStyles: {}, unit: 'chips', fourColor: true, allinConfirm: true };
+  const DEFAULTS = { mode: 'sng', players: 6, startChips: 10000, handsPerLevel: 10, cashSB: 50, cashBB: 100, speed: 1, helper: false, name: '我', showStyle: true, aiStyles: {}, unit: 'chips', fourColor: true, allinConfirm: true, difficulty: 'HARD', diffRestyle: true, stylesByUser: false };
   let settings = loadSettings();
   let game = null, ais = [], timer = null, busy = false, spectating = false;
   let humanSeat = 0;
@@ -1621,7 +1996,9 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
   let thinkingSeat = null; // 正在"思考"的 AI 座位
 
   function loadSettings() {
-    try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('holdem.settings') || '{}')); } catch (e) { return Object.assign({}, DEFAULTS); }
+    let st; try { st = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('holdem.settings') || '{}')); } catch (e) { st = Object.assign({}, DEFAULTS); }
+    if (!AI.DIFFICULTY[st.difficulty]) st.difficulty = AI.DEFAULT_DIFFICULTY;
+    return st;
   }
   function saveSettings() { try { localStorage.setItem('holdem.settings', JSON.stringify(settings)); } catch (e) { } }
   function applyDisplaySettings() { document.body.classList.toggle('four-color', settings.fourColor !== false); }
@@ -1740,10 +2117,49 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     if (!c) { const base = AI.PRESETS[out.preset]; for (const k of AI.PARAM_KEYS) out[k] = base[k] || 0; }
     return out;
   }
-  function setStyleCfg(seat, cfg) {
+  function setStyleCfg(seat, cfg, silent) {
     settings.aiStyles = settings.aiStyles || {};
-    settings.aiStyles[seat] = cfg; saveSettings();
+    settings.aiStyles[seat] = cfg; if (!silent) settings.stylesByUser = true; saveSettings();
     if (game && ais[seat]) { ais[seat].setStyle(cfg); if (game.phase !== 'acting') ais[seat].applyPending(); syncStyleNames(); render(); }
+  }
+  // 按难度给全桌 AI 分配混合风格（用户没手动改过风格、或切难度时勾选了重排才会覆盖）
+  function applyDifficultyStyles(force) {
+    if (settings.stylesByUser && !force) return;
+    const n = settings.players;
+    const seats = game ? game.players.filter(p => !p.isHuman).map(p => p.seat) : Array.from({ length: n - 1 }, (_, i) => i + 1);
+    const m = AI.seatStylesFor(settings.difficulty, seats);
+    for (const sd of seats) setStyleCfg(sd, m[sd], true);
+    settings.stylesByUser = false; saveSettings();
+  }
+  function setDifficulty(key, fromGame) {
+    if (!AI.DIFFICULTY[key]) return;
+    const changed = settings.difficulty !== key;
+    settings.difficulty = key; saveSettings();
+    if (game) for (const a of ais) if (a) { a.setDifficulty(key); if (game.phase !== 'acting') a.applyPending(); }
+    if (changed && settings.diffRestyle !== false) applyDifficultyStyles(true);
+    syncDiffUI();
+    if (game && fromGame && changed) toast(`AI 难度已切换为「${AI.DIFFICULTY[key].name}」，${game.phase === 'acting' ? '下一手生效' : '已生效'}`);
+    if (game) render();
+  }
+  function syncDiffUI() {
+    const key = settings.difficulty; const D = AI.DIFFICULTY[key];
+    const sel = $('s-diff'); if (sel && sel.value !== key) sel.value = key;
+    const desc = $('s-diff-desc'); if (desc) desc.textContent = D.desc;
+    const tb = $('tb-diff'); if (tb) { tb.textContent = D.name; tb.className = key === 'HELL' ? 'hell' : key === 'HARD' ? 'hard' : ''; tb.title = `AI 难度：${D.name}（点击切换）`; }
+    const list = $('diff-list'); if (list) list.querySelectorAll('.diff-row').forEach(r => r.classList.toggle('sel', r.dataset.k === key));
+    const rs = $('diff-restyle'); if (rs) rs.checked = settings.diffRestyle !== false;
+  }
+  function openDiffPanel() {
+    const list = $('diff-list'); list.innerHTML = '';
+    for (const k of AI.DIFFICULTY_ORDER) {
+      const D = AI.DIFFICULTY[k];
+      const row = document.createElement('div'); row.className = 'diff-row' + (k === settings.difficulty ? ' sel' : ''); row.dataset.k = k;
+      row.innerHTML = `<span class="dot"></span><div class="tt"><b>${D.name}${k === AI.DEFAULT_DIFFICULTY ? '（默认）' : ''}</b><span>${D.desc}</span></div>`;
+      row.onclick = () => setDifficulty(k, true);
+      list.appendChild(row);
+    }
+    syncDiffUI();
+    $('diff-overlay').classList.remove('hidden');
   }
   function syncStyleNames() {
     if (!game) return;
@@ -2123,10 +2539,14 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     const n = settings.players;
     const names = [settings.name]; const styles = [null];
     const pool = AI_NAMES.slice().sort(() => Math.random() - .5);
+    settings.difficulty = AI.DIFFICULTY[$('s-diff').value] ? $('s-diff').value : AI.DEFAULT_DIFFICULTY;
+    game = null; ais = [];
+    applyDifficultyStyles(false); // 未手动定制风格时：每局按难度重新分配一桌混合风格
     for (let i = 1; i < n; i++) { names.push(pool[i - 1]); styles.push(styleCfg(i).preset); }
     humanSeat = 0; spectating = false; revealed = false; xray = false; thinkingSeat = null; wasMyTurn = false;
     game = new E.Game({ mode: settings.mode, numPlayers: n, names, styles, startChips: settings.startChips, handsPerLevel: settings.handsPerLevel, cashSB: settings.cashSB, cashBB: settings.cashBB, humanSeat: 0, showAll: false });
-    ais = game.players.map(p => p.isHuman ? null : AI.makeAI(p.seat, styleCfg(p.seat)));
+    ais = game.players.map(p => p.isHuman ? null : AI.makeAI(p.seat, styleCfg(p.seat), undefined, settings.difficulty));
+    syncDiffUI();
     syncStyleNames();
     $('setup-overlay').classList.add('hidden'); $('rank-overlay').classList.add('hidden'); $('btn-skip').classList.add('hidden');
     renderSeats();
@@ -2141,6 +2561,8 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     applyDisplaySettings();
   }
   function fillSetup() {
+    const sel = $('s-diff'); if (!sel.options.length) for (const k of AI.DIFFICULTY_ORDER) { const o = document.createElement('option'); o.value = k; o.textContent = AI.DIFFICULTY[k].name + (k === AI.DEFAULT_DIFFICULTY ? '（默认）' : ''); sel.appendChild(o); }
+    sel.value = settings.difficulty; syncDiffUI();
     $('s-mode').value = settings.mode; $('s-players').value = settings.players; $('s-chips').value = settings.startChips;
     $('s-hpl').value = settings.handsPerLevel; $('s-sb').value = settings.cashSB; $('s-bb').value = settings.cashBB;
     $('s-speed').value = String(settings.speed); $('s-helper').checked = !!settings.helper; $('s-name').value = settings.name;
@@ -2201,9 +2623,14 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     $('s-styles').onclick = () => { settings.players = parseInt($('s-players').value, 10); openStylePanel(null); };
     $('style-close').onclick = () => $('style-overlay').classList.add('hidden');
     $('style-all-gto').onclick = () => setAllStyles('GTO');
+    $('style-all-diff').onclick = () => { applyDifficultyStyles(true); openStylePanel(styleSeat); };
     $('style-all-random').onclick = () => { const keys = AI.STYLE_ORDER.filter(k => k !== 'RANDOM' && k !== 'GTO'); const n = settings.players; const seats = game ? game.players.filter(p => !p.isHuman).map(p => p.seat) : Array.from({ length: n - 1 }, (_, i) => i + 1); for (const sd of seats) { const preset = keys[Math.floor(Math.random() * keys.length)]; const c = { preset }; const base = AI.PRESETS[preset]; for (const k of AI.PARAM_KEYS) c[k] = base[k] || 0; setStyleCfg(sd, c); } openStylePanel(styleSeat); };
     $('style-showlabel').onchange = () => { settings.showStyle = $('style-showlabel').checked; saveSettings(); if (game) render(); };
     $('s-speed').onchange = () => { settings.speed = parseFloat($('s-speed').value); saveSettings(); };
+    $('s-diff').onchange = () => setDifficulty($('s-diff').value, !!game);
+    $('tb-diff').onclick = openDiffPanel;
+    $('diff-close').onclick = () => $('diff-overlay').classList.add('hidden');
+    $('diff-restyle').onchange = () => { settings.diffRestyle = $('diff-restyle').checked; saveSettings(); };
     window.addEventListener('resize', () => { if (game) { renderSeats(); render(); } });
     // 桌面区域高度变化（展开下注面板 / 全下确认 / 软键盘）时重新排座位
     if (window.ResizeObserver) { let last = 0; new ResizeObserver(() => { const h = $('table-wrap').clientHeight; if (game && Math.abs(h - last) > 2) { last = h; fixSeatLayout(); } }).observe($('table-wrap')); }
@@ -2216,7 +2643,7 @@ table.lv tr.cur { color: var(--gold2); font-weight: 700; }
     const origStart = $('s-start').onclick;
     $('s-start').onclick = () => { origStart(); $('s-cancel').classList.remove('hidden'); };
   });
-  window.__holdem = { get game() { return game; }, get ais() { return ais; }, newGame, nextHand, openStylePanel, setStyleCfg, styleCfg, toggleReveal, showHistory, onPeekButton, openRaise, get settings() { return settings; }, set xray(v) { xray = v; render(); }, render };
+  window.__holdem = { get game() { return game; }, get ais() { return ais; }, newGame, nextHand, openStylePanel, setStyleCfg, styleCfg, toggleReveal, showHistory, onPeekButton, openRaise, openDiffPanel, setDifficulty, applyDifficultyStyles, get settings() { return settings; }, set xray(v) { xray = v; render(); }, render };
 })();
 
 </script>
